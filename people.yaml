@@ -1,3 +1,5 @@
+# Search: preferred_source, then fallback (itunes, supadata, ytdlp); YouTube only for priorities in youtube_priority.
+defaults: {preferred_source: itunes, fallback: [supadata], youtube_priority: [core], transcripts: [podcast_transcript, whisper, supadata]}
 people:
   - {name: Jensen Huang, role: NVIDIA CEO, priority: core}
   - {name: Andy Jassy, role: Amazon CEO, priority: core}

@@ -9,7 +9,11 @@ from urllib.parse import quote_plus
 import yaml
 
 from .ingest import Episode, _yt_json, canonical_id, in_window, parse_date
+from .config import check
 from .transcribe import title_match
+
+PEOPLE_DEFAULTS = {"preferred_source": "itunes", "fallback": ["supadata"], "transcripts": ["podcast_transcript", "whisper", "supadata"],
+                   "youtube_priority": ["core"]}
 
 CLIP = re.compile(r"#shorts|\bclips?\b|\breacts?\b|\breaction\b|\bhighlights?\b|\bexplained\b|\bAI voice\b", re.I)
 WINDOW = [(1, "EgQIAhAB"), (7, "EgQIAxAB"), (31, "EgQIBBAB"), (366, "EgQIBRAB")]
@@ -21,6 +25,15 @@ class Person:
     role: str
     priority: str
     aliases: list[str] = field(default_factory=list)
+    preferred_source: str = "itunes"
+    fallback: list[str] = field(default_factory=list)
+    transcripts: list[str] = field(default_factory=list)
+    youtube_priority: list[str] = field(default_factory=lambda: ["core"])
+
+    @property
+    def order(self) -> list[str]:
+        order = list(dict.fromkeys([self.preferred_source, *self.fallback]))
+        return [s for s in order if s == "itunes" or self.priority in self.youtube_priority]
 
     @property
     def names(self) -> list[str]:
@@ -32,8 +45,11 @@ class Person:
 
 
 def load_people(path: str | Path) -> list[Person]:
-    people = [Person(**p) for p in yaml.safe_load(Path(path).read_text())["people"]]
+    data = yaml.safe_load(Path(path).read_text())
+    defaults = {**PEOPLE_DEFAULTS, **data.get("defaults", {})}
+    people = [Person(**{**defaults, **p}) for p in data["people"]]
     for p in people:
+        check(p.name, vars(p))
         if p.priority not in ("core", "watch"):
             raise ValueError(f"{p.name}: priority must be core or watch")
     if len({p.name for p in people}) != len(people):
@@ -92,7 +108,7 @@ def parse_itunes(person: Person, results: list[dict], now: datetime, days: int, 
             continue
         out.append(_ep(person, id=canonical_id(r.get("episodeGuid"), None, r.get("trackViewUrl")), show=r.get("collectionName", ""),
                        title=r.get("trackName", ""), url=r.get("trackViewUrl") or r.get("episodeUrl", ""), published_at=dt,
-                       audio_url=r.get("episodeUrl"), description=(r.get("description") or "")[:2000]))
+                       audio_url=r.get("episodeUrl"), feed_url=r.get("feedUrl"), description=(r.get("description") or "")[:2000]))
     return out
 
 
@@ -119,21 +135,71 @@ def dedupe(channel_eps: list[Episode], person_eps: list[Episode], threshold: flo
     return kept
 
 
-def discover_people(people: list[Person], now: datetime, days: int, channel_eps: list[Episode], per_person: int = 3,
-                    via: tuple[str, ...] = ("youtube", "itunes")) -> tuple[list[Episode], dict]:
-    found, counts, errors = [], {v: 0 for v in via}, []
-    fns = {"youtube": from_youtube_search, "itunes": from_itunes}
-    for p in sorted(people, key=lambda p: p.priority != "core"):
-        for src, fn in ((v, fns[v]) for v in via):
+def from_supadata_search(person: Person, now: datetime, days: int, limit: int = 3, min_minutes: int = 20) -> list[Episode]:
+    from . import supadata
+
+    if not supadata.key():
+        raise LookupError(f"{supadata.ENV} not set")
+    rows = [{**r, "channel": (r.get("channel") or {}).get("name", "") if isinstance(r.get("channel"), dict) else r.get("channel", "")}
+            for r in supadata.search(f'"{person.name}"', days)]
+    out = []
+    for r in youtube_candidates(person, min_minutes, rows)[:limit * 2]:
+        info = supadata.video(r["id"])
+        dt = parse_date(info.get("uploadDate"))
+        if not dt or not in_window(dt, now, days):
+            continue
+        out.append(_ep(person, id=canonical_id(None, r["id"], None), show=(info.get("channel") or {}).get("name", r["channel"]),
+                       title=info.get("title", ""), url=f"https://www.youtube.com/watch?v={r['id']}", published_at=dt,
+                       youtube_id=r["id"], description=(info.get("description") or "")[:2000]))
+        if len(out) >= limit:
+            break
+    return out
+
+
+FINDERS = {"itunes": from_itunes, "supadata": from_supadata_search, "ytdlp": from_youtube_search}
+
+
+def feed_transcripts(eps: list[Episode], parse=None) -> int:
+    from .ingest import transcript_links
+
+    if parse is None:
+        import feedparser
+
+        parse = feedparser.parse
+    found, feeds = 0, {}
+    for e in eps:
+        if not e.feed_url or e.transcript_urls:
+            continue
+        if e.feed_url not in feeds:
             try:
-                eps = fn(p, now, days)
+                feeds[e.feed_url] = {canonical_id(x.get("id") or x.get("guid"), None, x.get("link")): x for x in parse(e.feed_url).entries}
+            except Exception:
+                feeds[e.feed_url] = {}
+        entry = feeds[e.feed_url].get(e.id)
+        if entry is not None:
+            e.transcript_urls = transcript_links(entry) or None
+            found += bool(e.transcript_urls)
+    return found
+
+
+def discover_people(people: list[Person], now: datetime, days: int, channel_eps: list[Episode], per_person: int = 3,
+                    only: tuple[str, ...] | None = None) -> tuple[list[Episode], dict]:
+    found, counts, errors, skipped = [], {}, [], set()
+    for p in sorted(people, key=lambda p: p.priority != "core"):
+        for src in only or p.order:
+            try:
+                eps = FINDERS[src](p, now, days)
+            except LookupError as exc:
+                skipped.add(f"{src}: {exc}")
+                continue
             except Exception as exc:
                 errors.append(f"{p.name}/{src}: {type(exc).__name__}")
                 continue
-            found += [replace(e, via=src) for e in eps[:per_person]]
+            found += [replace(e, via=src, methods=p.transcripts or None) for e in eps[:per_person]]
             print(f"[people] {p.name}/{src}: {len(eps)}")
     kept = dedupe(channel_eps, found)
     for e in kept:
-        counts[e.via] += 1
-    return kept, {"per_source": counts, "candidates": len(found), "errors": errors,
-                  "skipped_sources": ["listen-notes", "podcast-index"]}
+        counts[e.via] = counts.get(e.via, 0) + 1
+    tags = feed_transcripts(kept) if not only else 0
+    return kept, {"per_source": counts, "candidates": len(found), "feed_transcript_tags": tags, "errors": errors,
+                  "skipped_sources": sorted(skipped) + ["podcast-index: needs API key and secret"]}

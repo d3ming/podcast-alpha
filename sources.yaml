@@ -1,12 +1,14 @@
 # Tiers from the 2026-10-10 ranking and Spec v0.1. T3 is capped per week.
 t3_weekly_cap: 2
+# Discovery: preferred_source, then fallback (rss, supadata, ytdlp). Transcripts: tried in order.
+defaults: {preferred_source: rss, fallback: [supadata, ytdlp], transcripts: [podcast_transcript, whisper, supadata]}
 sources:
   - {id: dwarkesh, name: Dwarkesh Podcast, tier: 1, rss: "https://api.substack.com/feed/podcast/69345.rss", topics: [ai]}
   - {id: odd-lots, name: Odd Lots, tier: 1, rss: "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/8a94442e-5a74-4fa2-8b8d-ae27003a8d6b/982f5071-765c-403d-969d-ae27003a8d83/podcast.rss", topics: [macro, markets]}
   - {id: acquired, name: Acquired, tier: 1, rss: "https://feeds.transistor.fm/acquired", topics: [business]}
   - {id: no-priors, name: No Priors, tier: 1, rss: "https://feeds.megaphone.fm/nopriors", topics: [ai]}
   - {id: invest-like-the-best, name: Invest Like the Best, tier: 1, rss: "https://feeds.megaphone.fm/investlikethebest", topics: [investing]}
-  - {id: semianalysis, name: SemiAnalysis, tier: 1, youtube: "https://www.youtube.com/@SemiAnalysis/videos", topics: [semis, ai-infra]}
-  - {id: bg2, name: BG2 Pod, tier: 1, youtube: "https://www.youtube.com/@Bg2Pod/videos", topics: [tech, investing]}
-  - {id: chip-stock-investor, name: Chip Stock Investor, tier: 2, youtube: "https://www.youtube.com/@ChipStockInvestor/videos", topics: [semis]}
-  - {id: ticker-symbol-you, name: Ticker Symbol YOU, tier: 3, youtube: "https://www.youtube.com/@TickerSymbolYOU/videos", topics: [stocks]}
+  - {id: semianalysis, name: SemiAnalysis, tier: 1, rss: "https://anchor.fm/s/10fbee758/podcast/rss", youtube: "https://www.youtube.com/@SemiAnalysis/videos", topics: [semis, ai-infra]}
+  - {id: bg2, name: BG2 Pod, tier: 1, rss: "https://anchor.fm/s/f06c2370/podcast/rss", youtube: "https://www.youtube.com/@Bg2Pod/videos", topics: [tech, investing]}
+  - {id: chip-stock-investor, name: Chip Stock Investor, tier: 2, rss: "https://anchor.fm/s/e2cacf78/podcast/rss", youtube: "https://www.youtube.com/@ChipStockInvestor/videos", topics: [semis]}
+  - {id: ticker-symbol-you, name: Ticker Symbol YOU, tier: 3, rss: "https://rss.buzzsprout.com/1805490.rss", youtube: "https://www.youtube.com/@TickerSymbolYOU/videos", topics: [stocks]}

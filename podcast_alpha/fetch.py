@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -11,7 +11,8 @@ import yaml
 from .config import load_sources
 from .ingest import Episode, discover
 from .people import dedupe, discover_people, load_people
-from .transcribe import fmt_ts, get_transcript
+from .transcribe import fmt_ts, get_transcript, title_match
+from .whisper import Budget
 
 
 def slug(text: str, n: int = 60) -> str:
@@ -63,16 +64,18 @@ def load_manifest(run_dir: Path, now: datetime, days) -> dict:
 
 def youtube_only(args, now: datetime) -> Path:
     sources, t3_cap = load_sources(args.sources)
-    sources = [s for s in sources if s.youtube and (not args.only or s.id in args.only.split(","))]
+    sources = [replace(s, preferred_source="ytdlp", fallback=[], transcripts=["youtube_captions"])
+               for s in sources if s.youtube and (not args.only or s.id in args.only.split(","))]
     eps = discover(sources, now, args.days, t3_cap, per_source=args.per_source)
     meta = {"run_at": now.isoformat(timespec="seconds"), "days": args.days}
     if args.people:
-        person_eps, meta["people"] = discover_people(load_people(args.people), now, args.days, eps, args.per_person, ("youtube",))
+        person_eps, meta["people"] = discover_people(load_people(args.people), now, args.days, eps, args.per_person, ("ytdlp",))
         eps += person_eps
     out = Path(args.out)
     (out / "transcripts").mkdir(parents=True, exist_ok=True)
     rows = []
     for ep in eps:
+        ep.methods = ["youtube_captions"]
         segs, tsrc = get_transcript(ep)
         rows.append(ep_to_dict(ep, segs, tsrc))
         (out / "transcripts" / f"{slug(ep.id)}.md").write_text(episode_md(ep, segs, tsrc))
@@ -130,18 +133,22 @@ def fetch(args) -> Path:
     run_dir.mkdir(parents=True, exist_ok=True)
     manifest = {"run_at": now.isoformat(timespec="seconds"), "days": args.days, "episodes": [], "skipped_seen": []}
     eps = discover(sources, now, args.days, t3_cap, per_source=args.per_source)
+    known = store.known_since(now - timedelta(days=args.days + 7))
     if args.people:
-        person_eps, manifest["people"] = discover_people(
-            load_people(args.people), now, args.days, eps + store.known_since(now - timedelta(days=args.days + 7)), args.per_person)
+        person_eps, manifest["people"] = discover_people(load_people(args.people), now, args.days, eps + known, args.per_person)
         eps += person_eps
+    budget = Budget(args.whisper_minutes, args.whisper_per_episode)
+    eps.sort(key=lambda e: (e.source_id.startswith("person:"), e.tier, -e.published_at.timestamp()))
     for ep in eps:
-        if store.seen(ep.id) and not args.refetch:
+        dup = not args.refetch and (store.seen(ep.id) or any(k.id != ep.id and title_match(k.title, ep.title) >= 0.8 for k in known))
+        if dup:
             manifest["skipped_seen"].append(ep.id)
             print(f"[dedupe] skip {ep.id}")
             continue
-        segs, tsrc = get_transcript(ep)
+        segs, tsrc = get_transcript(ep, budget)
         manifest["episodes"].append(write_episode(run_dir, ep, segs, tsrc))
         store.add_episode(ep, tsrc)
+    manifest["whisper_minutes"] = round(budget.used / 60, 1)
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
     print(f"[run] {run_dir} ({len(manifest['episodes'])} episodes)")
     return run_dir

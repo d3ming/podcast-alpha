@@ -110,27 +110,38 @@ def find_youtube_mirror(source_name: str, title: str) -> str | None:
     return None
 
 
-def from_whisper(audio_url: str | None) -> list[dict] | None:
-    """Stub: faster-whisper fallback is not wired up in the MVP."""
-    return None
+DEFAULT_METHODS = ["podcast_transcript", "youtube_captions", "youtube_mirror", "whisper"]
 
 
-def get_transcript(ep) -> tuple[list[dict] | None, str | None]:
-    if ep.transcript_urls:
-        segs = from_rss_tag(ep.transcript_urls)
+def get_transcript(ep, budget=None) -> tuple[list[dict] | None, str | None]:
+    for m in ep.methods or DEFAULT_METHODS:
+        segs, label = None, m
+        if m == "podcast_transcript" and ep.transcript_urls:
+            segs, label = from_rss_tag(ep.transcript_urls), "podcast:transcript"
+        elif m == "whisper" and ep.audio_url and budget:
+            from .whisper import transcribe
+
+            try:
+                segs, used = transcribe(ep.audio_url, budget)
+            except Exception as exc:
+                print(f"[whisper] {ep.id}: {type(exc).__name__}")
+                continue
+            label = f"whisper ({round(used / 60)} min)"
+        elif m == "supadata" and ep.youtube_id:
+            from . import supadata
+
+            if supadata.key():
+                try:
+                    segs = supadata.transcript(ep.youtube_id)
+                except Exception as exc:
+                    print(f"[supadata] {ep.id}: {type(exc).__name__}")
+        elif m == "youtube_captions" and ep.youtube_id:
+            segs, label = from_youtube(ep.youtube_id), "youtube-captions"
+        elif m == "youtube_mirror" and not ep.youtube_id:
+            vid = find_youtube_mirror(ep.source_name, ep.title)
+            segs = from_youtube(vid) if vid else None
+            if segs:
+                ep.youtube_id, label = vid, "youtube-captions (mirror)"
         if segs:
-            return segs, "podcast:transcript"
-    if ep.youtube_id:
-        segs = from_youtube(ep.youtube_id)
-        if segs:
-            return segs, "youtube-captions"
-    if not ep.youtube_id:
-        vid = find_youtube_mirror(ep.source_name, ep.title)
-        segs = from_youtube(vid) if vid else None
-        if segs:
-            ep.youtube_id = vid
-            return segs, "youtube-captions (mirror)"
-    segs = from_whisper(ep.audio_url)
-    if segs:
-        return segs, "whisper"
+            return segs, label
     return None, None

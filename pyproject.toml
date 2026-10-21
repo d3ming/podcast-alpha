@@ -5,7 +5,7 @@ requires-python = ">=3.10"
 dependencies = ["feedparser>=6", "youtube-transcript-api>=1.0", "yt-dlp", "pyyaml", "requests", "jsonschema"]
 
 [project.optional-dependencies]
-whisper = ["faster-whisper"]
+whisper = ["faster-whisper>=1.2", "av<16"]
 dev = ["pytest"]
 
 [project.scripts]

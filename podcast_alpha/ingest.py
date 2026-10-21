@@ -26,6 +26,8 @@ class Episode:
     audio_url: str | None = None
     description: str = ""
     via: str = ""
+    methods: list | None = None
+    feed_url: str | None = None
 
 
 def canonical_id(guid: str | None, youtube_id: str | None, link: str | None) -> str:
@@ -122,20 +124,55 @@ def from_youtube(src: Source, now: datetime, days: int, max_items: int = 8) -> l
     return out
 
 
+def from_supadata(src: Source, now: datetime, days: int, max_items: int = 8) -> list[Episode]:
+    from . import supadata
+
+    if not supadata.key():
+        raise LookupError(f"{supadata.ENV} not set")
+    out = []
+    for vid in supadata.channel_videos(src.youtube.split("youtube.com/")[-1].split("/")[0], max_items):
+        info = supadata.video(vid)
+        dt = parse_date(info.get("uploadDate"))
+        if not dt or not in_window(dt, now, days) or (info.get("duration") or 0) < 300:
+            continue
+        out.append(Episode(
+            id=canonical_id(None, vid, None), source_id=src.id, source_name=src.name, tier=src.tier,
+            title=info.get("title", ""), url=f"https://www.youtube.com/watch?v={vid}", published_at=dt, youtube_id=vid,
+            description=(info.get("description") or "")[:2000], via="supadata"))
+    return out
+
+
+FINDERS = {"rss": from_rss, "supadata": from_supadata, "ytdlp": from_youtube}
+
+
+def find(src: Source, now: datetime, days: int) -> tuple[list[Episode], str]:
+    errors = []
+    for how in src.order:
+        try:
+            eps = FINDERS[how](src, now, days)
+        except Exception as exc:
+            errors.append(f"{how}: {type(exc).__name__}")
+            continue
+        for e in eps:
+            e.via, e.methods = e.via or how, src.transcripts or None
+        return eps, how
+    raise LookupError("; ".join(errors) or "no usable source")
+
+
 def discover(sources: list[Source], now: datetime, days: int, t3_cap: int, per_source: int = 3) -> list[Episode]:
     eps: list[Episode] = []
     t3 = 0
     for src in sources:
         try:
-            found = from_rss(src, now, days) if src.rss else from_youtube(src, now, days)
+            found, how = find(src, now, days)
         except Exception as exc:
-            print(f"[ingest] {src.id}: {type(exc).__name__}")
+            print(f"[ingest] {src.id}: {exc}")
             continue
         found.sort(key=lambda e: e.published_at, reverse=True)
         found = found[:per_source]
         if src.tier == 3:
             found = found[: max(0, t3_cap - t3)]
             t3 += len(found)
-        print(f"[ingest] {src.id}: {len(found)} in window")
+        print(f"[ingest] {src.id} via {how}: {len(found)} in window")
         eps.extend(found)
     return eps

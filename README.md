@@ -14,24 +14,37 @@ podcast-alpha publish runs/<date>/ranked.json   # code: validate, render digest 
 
 ```
 python3 -m venv .venv && . .venv/bin/activate
-pip install -e '.[dev]'
+pip install -e '.[dev,whisper]'   # pytest and faster-whisper (CPU, int8)
 pytest -q
 ```
+
+Optional: `SUPADATA_API_KEY` enables YouTube channel/person search and transcripts through Supadata. Without it those
+steps are skipped and listed under `skipped_sources` in the manifest.
 
 ## fetch
 
 `podcast-alpha fetch --days 7 [--only odd-lots,bg2] [--per-source 3] [--refetch]`
 
-- Sources come from [`sources.yaml`](sources.yaml): 9 sources in tiers 1-3 (tier 3 capped at 2 episodes).
-- RSS via feedparser and YouTube via yt-dlp. Dates are the publisher's feed date or the video's upload time.
-- Transcripts, in order: the feed's `podcast:transcript` tag, YouTube captions, then a YouTube copy of an
-  audio-only episode found by title match. faster-whisper is a stub.
+- Sources come from [`sources.yaml`](sources.yaml) (9 shows, tiers 1-3, tier 3 capped at 2) and
+  [`people.yaml`](people.yaml) (people watchlist, `priority: core|watch`, optional `aliases`; no holdings).
+- Each entry has `preferred_source` and `fallback` (defaults at the top of each file):
+  - shows: `rss`, then `supadata`, then `ytdlp`. RSS is the default; YouTube is only for video-only content.
+  - people: `itunes` (keyless iTunes Search), plus `supadata` YouTube search for priorities in `youtube_priority`
+    (default `core`). Podcast Index needs a key and is skipped. Person episodes are tagged `source_id: person:<name>`.
+- `transcripts` sets the order: `podcast_transcript` (the feed's tag, also looked up for iTunes hits), `whisper`
+  (faster-whisper `base.en`, CPU int8; `--whisper-minutes 120` per run, `--whisper-per-episode 45`), `supadata`,
+  `youtube_captions`, `youtube_mirror`.
 - Dedupe: SQLite (`data/podcast_alpha.sqlite`) keyed by episode id (RSS guid, else YouTube id). Seen episodes
   are skipped and listed under `skipped_seen`; `--refetch` includes them again.
 - Output in `runs/<YYYY-MM-DD>/` (git-ignored):
   - one `.md` per episode: YAML front matter (`episode_id`, `title`, `source`, `source_id`, `tier`, `published`,
     `url`, `youtube_id`, `transcript_source`), the description, then the transcript as `[h:mm:ss] Speaker: text`.
   - `manifest.json`: every episode, including those without a transcript (`has_transcript: false`).
+
+## YouTube fallback off the box
+
+`fetch --youtube-only --days 7 --out <dir>` runs yt-dlp channel and person search with captions into a self-contained
+dir (needs only yt-dlp, youtube-transcript-api, pyyaml). `merge <dir> --into runs/<name>` dedupes it into a run.
 
 ## rank (bot)
 
