@@ -1,5 +1,6 @@
 import sqlite3
 import time
+from types import SimpleNamespace
 from pathlib import Path
 
 SCHEMA = """
@@ -26,3 +27,8 @@ class Store:
         )
         self.db.commit()
         return cur.rowcount == 1
+
+    def known_since(self, since) -> list[SimpleNamespace]:
+        rows = self.db.execute("SELECT id, title FROM episodes WHERE published_at >= ? AND source_id NOT LIKE 'person:%'",
+                               (since.isoformat(),)).fetchall()
+        return [SimpleNamespace(id=i, title=t) for i, t in rows]

@@ -86,3 +86,12 @@ def test_dedupe_against_channels_and_across_people():
     kept = dedupe(channel, people)
     assert [e.id for e in kept] == ["yt:3"]
     assert kept[0].source_id == "person:Jensen Huang,person:Lisa Su"
+
+
+def test_store_known_since_excludes_people(tmp_path):
+    from datetime import timedelta
+    from podcast_alpha.store import Store
+    s = Store(tmp_path / "db.sqlite")
+    s.add_episode(ep("yt:a", "Channel ep", "bg2"), None)
+    s.add_episode(ep("rss:b", "Person ep"), None)
+    assert [k.id for k in s.known_since(NOW - timedelta(days=1))] == ["yt:a"]

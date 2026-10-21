@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
@@ -43,7 +43,8 @@ def fetch(args) -> Path:
     manifest = {"run_at": now.isoformat(timespec="seconds"), "days": args.days, "episodes": [], "skipped_seen": []}
     eps = discover(sources, now, args.days, t3_cap, per_source=args.per_source)
     if args.people:
-        person_eps, manifest["people"] = discover_people(load_people(args.people), now, args.days, eps, args.per_person)
+        person_eps, manifest["people"] = discover_people(
+            load_people(args.people), now, args.days, eps + store.known_since(now - timedelta(days=args.days + 7)), args.per_person)
         eps += person_eps
     for ep in eps:
         if store.seen(ep.id) and not args.refetch:
