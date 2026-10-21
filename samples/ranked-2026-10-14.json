@@ -1,0 +1,418 @@
+{
+  "week_of": "2026-10-14",
+  "run_dir": "runs/2026-10-21",
+  "ranked_by": "Cain",
+  "notes": "Invest Like the Best had no transcript and is scored on metadata only. Claims are as stated by speakers and not yet fact-checked.",
+  "episodes": [
+    {
+      "rank": 1,
+      "episode_id": "yt:eS7qQ3WJSrw",
+      "title": "Jensen Huang | Does AI Revenue Justify Capex, '27 AI Bottlenecks, Singularity, Open vs Closed & more",
+      "url": "https://www.youtube.com/watch?v=eS7qQ3WJSrw",
+      "source": "BG2 Pod",
+      "tier": 1,
+      "published": "2026-10-15",
+      "score": 8,
+      "reason": "Jensen firsthand: lab revenue must go $200B\u2192$400B\u2192$800B to pay back capex; Vera Rubin at ~$50B/GW vs $5B for CPU compute. Operator-level numbers, partly checkable.",
+      "claims": [
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "Huang says frontier plus inference lab revenue is about $200B this year and must double to $400B next year and $800B after to approach payback on AI capex.",
+          "speaker": "Jensen Huang",
+          "timestamp": 3661,
+          "novelty": 2,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "Huang frames a Vera Rubin gigawatt at roughly $50B versus about $5B per GW for general-purpose compute, betting it delivers 10x+ more value.",
+          "speaker": "Jensen Huang",
+          "timestamp": 4262,
+          "novelty": 2,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "Huang credits Claude Code with a 10x unlock in AI usage this year, with labs growing revenue 2-3x annually.",
+          "speaker": "Jensen Huang",
+          "timestamp": 3687,
+          "novelty": 1,
+          "verifiable": 1
+        },
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "Nvidia's physical-AI business did about $10B over the last year, its first $10B year.",
+          "speaker": "Jensen Huang",
+          "timestamp": 1616,
+          "novelty": 2,
+          "verifiable": 3
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "episode_id": "yt:I3tNGNjYcDw",
+      "title": "Ep. 039 - [EMERGENCY] Brad Gerstner Cut Our 2027 Forecast in Half. We Raised It. (Datacenters)",
+      "url": "https://www.youtube.com/watch?v=I3tNGNjYcDw",
+      "source": "SemiAnalysis",
+      "tier": 1,
+      "published": "2026-10-20",
+      "score": 8,
+      "reason": "SemiAnalysis raises its 43 GW 2027 datacenter forecast against a ~25 GW consensus, built from site-level tracking incl. 400+ moratoriums. Checkable, material to AI infra names.",
+      "claims": [
+        {
+          "ticker": [
+            "NVDA",
+            "private:SemiAnalysis"
+          ],
+          "claim": "SemiAnalysis is raising, not cutting, its 43 GW 2027 datacenter capacity forecast despite Gerstner calling it too aggressive.",
+          "speaker": "host (SemiAnalysis)",
+          "timestamp": 93,
+          "novelty": 3,
+          "verifiable": 2
+        },
+        {
+          "ticker": [],
+          "claim": "Bear case sits near 25 GW for 2027, driven by moratorium and grid-connection fears.",
+          "speaker": "host (SemiAnalysis)",
+          "timestamp": 103,
+          "novelty": 1,
+          "verifiable": 2
+        },
+        {
+          "ticker": [],
+          "claim": "SemiAnalysis cross-checked over 400 local datacenter moratoriums against its site list and found little impact on 2027 capacity.",
+          "speaker": "SemiAnalysis analyst",
+          "timestamp": 440,
+          "novelty": 2,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "episode_id": "rss:8deba96eaa05b515",
+      "title": "Don Wilson on the GPU Market's Trillion Dollar Question",
+      "url": "https://omny.fm/shows/odd-lots/don-wilson-on-the-gpu-markets-trillion-dollar-question",
+      "source": "Odd Lots",
+      "tier": 1,
+      "published": "2026-10-19",
+      "score": 7,
+      "reason": "DRW's Don Wilson on GPU futures: CFTC comment period means compute futures can list Nov 9 absent action; neocloud credit stress shows need for hedging. Firsthand market-structure news.",
+      "claims": [
+        {
+          "ticker": [
+            "CRWV"
+          ],
+          "claim": "GPU compute futures can list on November 9 if the CFTC takes no action during the extended comment period.",
+          "speaker": "Don Wilson",
+          "timestamp": 262,
+          "novelty": 3,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "CRWV"
+          ],
+          "claim": "Wilson argues neoclouds without creditworthy counterparties face real risk and need GPU price hedging products.",
+          "speaker": "Don Wilson",
+          "timestamp": 157,
+          "novelty": 1,
+          "verifiable": 1
+        },
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "Wilson expects Nvidia to lose some market share but remain dominant.",
+          "speaker": "Don Wilson",
+          "timestamp": 1026,
+          "novelty": 0,
+          "verifiable": 0
+        },
+        {
+          "ticker": [],
+          "claim": "DRW is building a 'crunch spread' and eventually token futures on model output.",
+          "speaker": "Don Wilson",
+          "timestamp": 845,
+          "novelty": 2,
+          "verifiable": 1
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "episode_id": "yt:u4ajXt_hO9A",
+      "title": "CoreWeave Bonds Hit 15% Yield: Are Neoclouds In Trouble?",
+      "url": "https://www.youtube.com/watch?v=u4ajXt_hO9A",
+      "source": "Chip Stock Investor",
+      "tier": 2,
+      "published": "2026-10-20",
+      "score": 6,
+      "reason": "Clear CoreWeave credit read: 9.75% 2026 notes traded above 15% yield; $5.5B cash vs $7.5B current debt and $27.6B LT debt. Filing-checkable, but analyst recap.",
+      "claims": [
+        {
+          "ticker": [
+            "CRWV"
+          ],
+          "claim": "CoreWeave's 9.75% senior notes issued April 2026 traded at yields above 15% last week.",
+          "speaker": "Chip Stock Investor host",
+          "timestamp": 406,
+          "novelty": 1,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "CRWV"
+          ],
+          "claim": "At end of Q2 2026 CoreWeave had $5.5B cash against $7.5B current debt and $27.6B long-term debt.",
+          "speaker": "Chip Stock Investor host",
+          "timestamp": 228,
+          "novelty": 1,
+          "verifiable": 3
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "episode_id": "yt:0evKvwL_ywY",
+      "title": "Is the Neocloud Bubble Popping? What TSMC Q3 Tells Us",
+      "url": "https://www.youtube.com/watch?v=0evKvwL_ywY",
+      "source": "Chip Stock Investor",
+      "tier": 2,
+      "published": "2026-10-15",
+      "score": 6,
+      "reason": "TSMC Q3 recap ($46.7B rev, 66% GM, HPC 68% of rev) paired with CoreWeave capex/revenue down to ~2.5x. Solid, checkable, but known.",
+      "claims": [
+        {
+          "ticker": [
+            "TSM"
+          ],
+          "claim": "TSMC Q3 2026 revenue was $46.7B with 66% gross and 58.7% operating margin.",
+          "speaker": "Chip Stock Investor host",
+          "timestamp": 115,
+          "novelty": 1,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "TSM"
+          ],
+          "claim": "HPC grew 22% sequentially to about 68% of TSMC revenue.",
+          "speaker": "Chip Stock Investor host",
+          "timestamp": 148,
+          "novelty": 1,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "CRWV",
+            "NBIS"
+          ],
+          "claim": "CoreWeave's capex-to-revenue ratio has come down to roughly 2.5x.",
+          "speaker": "Chip Stock Investor host",
+          "timestamp": 524,
+          "novelty": 1,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "episode_id": "rss:5b62e23ce037c14e",
+      "title": "CME's Terry Duffy on the Disconcerting State of Finance Regulation",
+      "url": "https://omny.fm/shows/odd-lots/cmes-terry-duffy-on-the-disconcerting-state-of-finance-regulation",
+      "source": "Odd Lots",
+      "tier": 1,
+      "published": "2026-10-20",
+      "score": 5,
+      "reason": "CME CEO firsthand on regulation: 2,500 CFTC self-certifications, none denied; CME litigating vs perps. Relevant to CME/prediction markets, light on numbers.",
+      "claims": [
+        {
+          "ticker": [
+            "CME"
+          ],
+          "claim": "Duffy says about 2,500 self-certifications were filed with the CFTC under the second Trump administration and none were denied.",
+          "speaker": "Terry Duffy",
+          "timestamp": 245,
+          "novelty": 2,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "CME"
+          ],
+          "claim": "CME declined to list 24/7 perpetuals, arguing perps are swaps, which underpins its litigation with the CFTC.",
+          "speaker": "Terry Duffy",
+          "timestamp": 720,
+          "novelty": 2,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "episode_id": "yt:oHpxGDTzzDs",
+      "title": "Wix at 7.5x Free Cash Flow: Deep Value or Value Trap?",
+      "url": "https://www.youtube.com/watch?v=oHpxGDTzzDs",
+      "source": "Chip Stock Investor",
+      "tier": 2,
+      "published": "2026-10-16",
+      "score": 5,
+      "reason": "Specific WIX value case: 7.5x FCF, 1.5x sales, $1.6B buyback funded by 0% converts struck ~$210, Base44 at $150M ARR. Checkable, single-name analyst view.",
+      "claims": [
+        {
+          "ticker": [
+            "WIX"
+          ],
+          "claim": "Wix trades around 7.5x free cash flow and 1.5x sales near $75/share.",
+          "speaker": "Chip Stock Investor host",
+          "timestamp": 1207,
+          "novelty": 1,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "WIX"
+          ],
+          "claim": "Wix issued $1.1B of 0% convertibles with ~$210 conversion and repurchased $1.6B of stock.",
+          "speaker": "Chip Stock Investor host",
+          "timestamp": 494,
+          "novelty": 1,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "WIX"
+          ],
+          "claim": "Base44 crossed $150M ARR in May 2026 and is on path to $200M.",
+          "speaker": "Chip Stock Investor host",
+          "timestamp": 305,
+          "novelty": 2,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 8,
+      "episode_id": "rss:930d639717ef8735",
+      "title": "The Changing Physics of Cybersecurity and Drug Development with OpenAI President Greg Brockman",
+      "url": "https://traffic.megaphone.fm/PDP1628614600.mp3",
+      "source": "No Priors",
+      "tier": 1,
+      "published": "2026-10-15",
+      "score": 5,
+      "reason": "Brockman firsthand on OpenAI but mostly vision: ~400 old math problems solved, AI in cyber and drug discovery. Little that maps to a ticker.",
+      "claims": [
+        {
+          "ticker": [
+            "private:OpenAI"
+          ],
+          "claim": "OpenAI says its agents have solved nearly 400 long-standing math problems.",
+          "speaker": "Greg Brockman",
+          "timestamp": 333,
+          "novelty": 2,
+          "verifiable": 1
+        },
+        {
+          "ticker": [
+            "private:OpenAI"
+          ],
+          "claim": "Brockman cites drug development costing ~$1.5B per approved molecule as the target for AI cost reduction.",
+          "speaker": "Greg Brockman",
+          "timestamp": 756,
+          "novelty": 0,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 9,
+      "episode_id": "rss:aaed2022fda8c519",
+      "title": "Christina Cacioppo - Building an Enduring Software Company in the Age of AI - [Invest Like the Best, EP.496]",
+      "url": "https://colossus.com/episode/becoming-a-category-winner/",
+      "source": "Invest Like the Best",
+      "tier": 1,
+      "published": "2026-10-20",
+      "score": 4,
+      "reason": "No transcript; scored on metadata only (low confidence). Vanta CEO on agent-first SaaS; strong guest, but private company.",
+      "claims": []
+    },
+    {
+      "rank": 10,
+      "episode_id": "yt:GQm2sHqU0kg",
+      "title": "This Pullback is a Gift. I'm Buying These Stocks NOW.",
+      "url": "https://www.youtube.com/watch?v=GQm2sHqU0kg",
+      "source": "Ticker Symbol YOU",
+      "tier": 3,
+      "published": "2026-10-19",
+      "score": 3,
+      "reason": "Tier-3 sponsored buy list (TSM, COHR, MU, AMAT, AVGO); recap of earnings with some figures that conflict with other sources. Hype framing.",
+      "claims": [
+        {
+          "ticker": [
+            "COHR"
+          ],
+          "claim": "Coherent guided up to $2.4B next-quarter revenue, about 52% YoY growth, with the stock down 31%.",
+          "speaker": "Alex (host)",
+          "timestamp": 286,
+          "novelty": 1,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "TSM"
+          ],
+          "claim": "Host says TSMC guided ~$53.3B next-quarter revenue and ~$62B 2026 capex (unverified; conflicts with other episodes).",
+          "speaker": "Alex (host)",
+          "timestamp": 194,
+          "novelty": 0,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 11,
+      "episode_id": "rss:008d80485c961612",
+      "title": "Seinfeld",
+      "url": "https://www.acquired.fm/episodes/seinfeld",
+      "source": "Acquired",
+      "tier": 1,
+      "published": "2026-10-18",
+      "score": 3,
+      "reason": "Seinfeld business history (syndication rights, Castle Rock). Great story, little investable.",
+      "claims": [
+        {
+          "ticker": [
+            "SONY"
+          ],
+          "claim": "Seinfeld's long-run value came from syndication rights rather than first-run fees.",
+          "speaker": "host",
+          "timestamp": 2340,
+          "novelty": 0,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 12,
+      "episode_id": "rss:6be936e711130fc2",
+      "title": "James Robinson on What It Looks Like When a State is Failing",
+      "url": "https://omny.fm/shows/odd-lots/james-robinson-on-what-it-looks-like-when-a-state-is-failing",
+      "source": "Odd Lots",
+      "tier": 1,
+      "published": "2026-10-21",
+      "score": 2,
+      "reason": "Nobel economist on failing states; macro/institutional, nothing actionable.",
+      "claims": []
+    }
+  ]
+}
