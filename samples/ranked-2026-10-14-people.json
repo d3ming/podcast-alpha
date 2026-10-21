@@ -1,0 +1,494 @@
+{
+  "week_of": "2026-10-14",
+  "run_dir": "runs/2026-10-21-people",
+  "ranked_by": "Cain",
+  "notes": "Channels + people run, ranked by Cain. 51 fetched; 36 dropped: 35 only mention a watched person or don't feature them (recaps, commentary, unrelated shows) plus 1 duplicate (Big Technology iTunes copy of the Pichai interview). 15 ranked. 5 have no transcript and are scored on title/description only (low confidence). Claims are not yet checked against filings.",
+  "episodes": [
+    {
+      "rank": 1,
+      "episode_id": "yt:lVNHybwudXI",
+      "title": "🇺🇸 Elon Musk Unveils SpaceX Flight 15 Plans and Q3 2026 Financial & Operational Results [10/20/2026]",
+      "url": "https://www.youtube.com/watch?v=lVNHybwudXI",
+      "source": "MAGNO NEWS",
+      "tier": 2,
+      "published": "2026-10-20",
+      "score": 9,
+      "reason": "SpaceX's own Q3 earnings call (Elon + finance team), relayed in full: new primary numbers and 2027 compute/capex guidance, all checkable against the release and filings.",
+      "claims": [
+        {
+          "ticker": [
+            "SPCX"
+          ],
+          "claim": "SpaceX expects to add ~10 GW of compute in 2027 on top of ~2.5-3 GW by end of 2026, for ~13 GW total, and is building 20 GW of power and cooling.",
+          "speaker": "Elon Musk",
+          "timestamp": 800,
+          "novelty": 3,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "SPCX"
+          ],
+          "claim": "Q4 2026 capex is guided to $35-40B, up from $19.6B in Q3, driven by superintelligence (SI) compute.",
+          "speaker": "Bret (SpaceX finance)",
+          "timestamp": 2160,
+          "novelty": 3,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "SPCX",
+            "private:Cursor"
+          ],
+          "claim": "SI segment revenue was $7B in Q3, of which $608M came from the Cursor acquisition; SI segment adjusted EBITDA was $5B.",
+          "speaker": "Bret (SpaceX finance)",
+          "timestamp": 1920,
+          "novelty": 3,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "SPCX"
+          ],
+          "claim": "Q3 net income was $4.4B and adjusted EBITDA $8.8B (+306% YoY); connectivity revenue was $5.2B (+69% YoY).",
+          "speaker": "SpaceX finance",
+          "timestamp": 120,
+          "novelty": 3,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "SPCX",
+            "NVDA"
+          ],
+          "claim": "SpaceX plans a 440,000 Vera Rubin training cluster online by end of Q2 2027 and targets $100B ARR by December 2026.",
+          "speaker": "Elon Musk / Bret",
+          "timestamp": 880,
+          "novelty": 3,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "episode_id": "yt:F3ItSTZNtT0",
+      "title": "Sundar Pichai: Path To Recursive Self-Improvement, Compute Allocation Dilemma, Future AI Interfaces",
+      "url": "https://www.youtube.com/watch?v=F3ItSTZNtT0",
+      "source": "Alex Kantrowitz",
+      "tier": 2,
+      "published": "2026-10-20",
+      "score": 8,
+      "reason": "Pichai himself, with fresh numbers on Gemini 4 Argon uptake and Google being compute-short; first-hand operator access on GOOGL capex and cloud tradeoffs.",
+      "claims": [
+        {
+          "ticker": [
+            "GOOGL"
+          ],
+          "claim": "Gemini 4 Argon reached almost 25 trillion tokens in its first 72 hours, about 3x Gemini 3.0, and Google is capacity constrained serving it.",
+          "speaker": "Sundar Pichai",
+          "timestamp": 135,
+          "novelty": 3,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "GOOGL"
+          ],
+          "claim": "Google prioritizes frontier-research compute even to the detriment of near-term Cloud profits; today's compute reflects decisions made in 2024 and everyone is short.",
+          "speaker": "Sundar Pichai",
+          "timestamp": 1035,
+          "novelty": 2,
+          "verifiable": 1
+        },
+        {
+          "ticker": [
+            "GOOGL"
+          ],
+          "claim": "Teams using Argon for coding saw about a 30% increase in throughput and roughly a one-third decrease in rollbacks.",
+          "speaker": "Sundar Pichai",
+          "timestamp": 2295,
+          "novelty": 2,
+          "verifiable": 1
+        },
+        {
+          "ticker": [
+            "GOOGL"
+          ],
+          "claim": "Google has sent TPUs to space as part of its orbital data center project and expects a first 'hello world' from them imminently.",
+          "speaker": "Sundar Pichai",
+          "timestamp": 2205,
+          "novelty": 3,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "GOOGL",
+            "private:Anthropic"
+          ],
+          "claim": "Google says it covers 100% of the power cost for its data center projects and has committed tens of billions to Anthropic, partly tied to TPUs.",
+          "speaker": "Sundar Pichai",
+          "timestamp": 2340,
+          "novelty": 1,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "episode_id": "yt:t2LLh6HUG2Y",
+      "title": "Nvidia GTC Berlin 2026: Jensen Huang Full Keynote",
+      "url": "https://www.youtube.com/watch?v=t2LLh6HUG2Y",
+      "source": "Yahoo Finance",
+      "tier": 2,
+      "published": "2026-10-21",
+      "score": 7,
+      "reason": "Full Jensen keynote: Vera Rubin in full production plus concrete AI-factory economics ($50B per GW); mostly product pitch, so below the top two.",
+      "claims": [
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "A 1 GW AI factory costs about $50B all-in and should generate tens of billions of revenue per year.",
+          "speaker": "Jensen Huang",
+          "timestamp": 1640,
+          "novelty": 1,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "Vera Rubin is in full production, 100% liquid cooled, and a node assembles in under 5 minutes vs about 2 hours for Blackwell.",
+          "speaker": "Jensen Huang",
+          "timestamp": 880,
+          "novelty": 2,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "Vera Rubin delivers about 30x Blackwell, which was itself about 30x Hopper, for LLM processing.",
+          "speaker": "Jensen Huang",
+          "timestamp": 1280,
+          "novelty": 1,
+          "verifiable": 1
+        },
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "DSX pre-built pods should cut time from compute arrival to token production from 4-5 months to about one month.",
+          "speaker": "Jensen Huang",
+          "timestamp": 1680,
+          "novelty": 2,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "NVDA"
+          ],
+          "claim": "Nvidia announced investments in 14 startups this week and has 12,000+ partnerships across Europe.",
+          "speaker": "Jensen Huang",
+          "timestamp": 40,
+          "novelty": 1,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "episode_id": "rss:cd44123a1d227ebf",
+      "title": "Sundar Pichai on Gemini 4 and the AI compute crunch",
+      "url": "https://podcasts.apple.com/us/podcast/sundar-pichai-on-gemini-4-and-the-ai-compute-crunch/id1840154537?i=1000797461022&uo=4",
+      "source": "Sources with Alex Heath",
+      "tier": 2,
+      "published": "2026-10-21",
+      "score": 6,
+      "reason": "Low confidence, no transcript: Pichai interview on Gemini 4, compute crunch and Google turning FCF negative per description. Likely overlaps the Big Tech interview.",
+      "claims": []
+    },
+    {
+      "rank": 5,
+      "episode_id": "yt:mFPpoab413s",
+      "title": "Dreamforce 2026｜OpenAI｜Sam Altman CEO 對談｜AI 的安全責任與企業工作方式｜繁體中文字幕",
+      "url": "https://www.youtube.com/watch?v=mFPpoab413s",
+      "source": "Taiwan Force",
+      "tier": 2,
+      "published": "2026-10-15",
+      "score": 6,
+      "reason": "Altman with Benioff at Dreamforce (re-upload with subtitles): first-hand on OpenAI's post-incident safety reset and model progress; little hard financial detail.",
+      "claims": [
+        {
+          "ticker": [
+            "private:OpenAI"
+          ],
+          "claim": "OpenAI says an internal model beyond GPT-6.1 Astra can do math the best human mathematicians cannot.",
+          "speaker": "Sam Altman",
+          "timestamp": 840,
+          "novelty": 2,
+          "verifiable": 1
+        },
+        {
+          "ticker": [
+            "private:OpenAI"
+          ],
+          "claim": "After the Hugging Face incident OpenAI is pacing capability development so alignment, safety and monitoring stay ahead of capabilities.",
+          "speaker": "Sam Altman",
+          "timestamp": 880,
+          "novelty": 1,
+          "verifiable": 1
+        },
+        {
+          "ticker": [
+            "private:OpenAI",
+            "CRM"
+          ],
+          "claim": "OpenAI is pitching small enterprises on its 'Daybreak' security services against AI-driven attacks.",
+          "speaker": "Sam Altman",
+          "timestamp": 1160,
+          "novelty": 2,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "episode_id": "yt:e0RrzOZhysg",
+      "title": "Microsoft CEO on its NEW Nvidia-Powered AI Super Laptop",
+      "url": "https://www.youtube.com/watch?v=e0RrzOZhysg",
+      "source": "Joanna Stern",
+      "tier": 2,
+      "published": "2026-10-15",
+      "score": 5,
+      "reason": "Nadella on the Nvidia RTX Spark Surface launch and agent security in Windows; operator access but mostly product framing, few numbers.",
+      "claims": [
+        {
+          "ticker": [
+            "MSFT",
+            "NVDA"
+          ],
+          "claim": "Microsoft says last year's frontier models now run locally on the RTX Spark Surface Laptop Ultra and last quarter's frontier runs on a Windows DGX Station.",
+          "speaker": "Satya Nadella",
+          "timestamp": 640,
+          "novelty": 2,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "MSFT"
+          ],
+          "claim": "Windows will give agents their own separate identity, containment and permissions, with Defender as the 'AI antivirus' for agents.",
+          "speaker": "Satya Nadella",
+          "timestamp": 280,
+          "novelty": 1,
+          "verifiable": 2
+        },
+        {
+          "ticker": [
+            "MSFT"
+          ],
+          "claim": "Consumer Copilot now spans chat, co-work, code and autopilot modes, and Microsoft showed a wearable badge prototype for agent access.",
+          "speaker": "Satya Nadella",
+          "timestamp": 1040,
+          "novelty": 1,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "episode_id": "rss:3d3c46952a726258",
+      "title": "Satya Nadella on chasing frontier labs, security, “SI,” & succession at Microsoft",
+      "url": "https://podcasts.apple.com/us/podcast/satya-nadella-on-chasing-frontier-labs-security-si/id6819309503?i=1000797410457&uo=4",
+      "source": "Future Proof from Semafor Technology",
+      "tier": 2,
+      "published": "2026-10-21",
+      "score": 5,
+      "reason": "Low confidence, no transcript: Semafor interview with Nadella on chasing frontier labs, security, 'SI' and succession; topic is material to MSFT.",
+      "claims": []
+    },
+    {
+      "rank": 8,
+      "episode_id": "yt:Fr5vzNknYJE",
+      "title": "Vercel Ship 2026",
+      "url": "https://www.youtube.com/watch?v=Fr5vzNknYJE",
+      "source": "Vercel",
+      "tier": 2,
+      "published": "2026-10-15",
+      "score": 5,
+      "reason": "Tobi Lütke fireside at Vercel Ship (from ~6:00:00 of a 6-hour stream): useful view on agentic commerce sizing and Shopify's headless stack, but opinion-led.",
+      "claims": [
+        {
+          "ticker": [
+            "SHOP"
+          ],
+          "claim": "Lütke expects agentic commerce to replace some share of commerce, perhaps 20-40%, not all of it.",
+          "speaker": "Tobi Lütke",
+          "timestamp": 22160,
+          "novelty": 2,
+          "verifiable": 0
+        },
+        {
+          "ticker": [
+            "SHOP",
+            "private:Vercel"
+          ],
+          "claim": "Vercel Shop, an open-source Next.js storefront for Shopify, is GA, built on a new framework-agnostic Hydrogen 3 SDK.",
+          "speaker": "Guillermo Rauch / Tobi Lütke",
+          "timestamp": 22520,
+          "novelty": 2,
+          "verifiable": 3
+        },
+        {
+          "ticker": [
+            "SHOP"
+          ],
+          "claim": "Shopify is backing an open Universal Commerce Protocol for agent-driven shopping.",
+          "speaker": "Tobi Lütke",
+          "timestamp": 22760,
+          "novelty": 1,
+          "verifiable": 2
+        }
+      ]
+    },
+    {
+      "rank": 9,
+      "episode_id": "rss:f2c2930d13eca36f",
+      "title": "Sam Altman: RSI, AI Consciousness, OpenAI's New Hardware, Compute, and more!",
+      "url": "https://podcasts.apple.com/us/podcast/sam-altman-rsi-ai-consciousness-openais-new-hardware/id6804878923?i=1000797432965&uo=4",
+      "source": "Forward Future Interviews",
+      "tier": 2,
+      "published": "2026-10-21",
+      "score": 5,
+      "reason": "Low confidence, no transcript: Altman one-on-one on RSI, OpenAI hardware and compute per description; primary access but unknown depth.",
+      "claims": []
+    },
+    {
+      "rank": 10,
+      "episode_id": "rss:abfb5e68c88bdf63",
+      "title": "Elon Musk: \"Humans Won't Be in Control\" When AI Becomes Smarter Than Us",
+      "url": "https://podcasts.apple.com/us/podcast/elon-musk-humans-wont-be-in-control-when-ai-becomes/id6820674378?i=1000797217781&uo=4",
+      "source": "The Builders",
+      "tier": 2,
+      "published": "2026-10-20",
+      "score": 4,
+      "reason": "Low confidence, no transcript: Walter Isaacson interviews Musk on AI control, robots and politics; description suggests big-picture talk, not numbers.",
+      "claims": []
+    },
+    {
+      "rank": 11,
+      "episode_id": "yt:a-_TTEdieaI",
+      "title": "Microsoft AI’s CEO on building a human-first AI future | Terms of Service",
+      "url": "https://www.youtube.com/watch?v=a-_TTEdieaI",
+      "source": "CNN",
+      "tier": 2,
+      "published": "2026-10-20",
+      "score": 4,
+      "reason": "Suleyman on CNN: mostly AI safety and consciousness views, little that moves MSFT; one cost claim on medical AI.",
+      "claims": [
+        {
+          "ticker": [
+            "MSFT"
+          ],
+          "claim": "Suleyman says the burden of proof on AI safety is shifting to model companies, with industry backing a self-policing framework including audits.",
+          "speaker": "Mustafa Suleyman",
+          "timestamp": 800,
+          "novelty": 1,
+          "verifiable": 1
+        },
+        {
+          "ticker": [
+            "MSFT"
+          ],
+          "claim": "Microsoft AI's diagnostic models beat humans on complex cases and can be two to three times cheaper in tests and interventions.",
+          "speaker": "Mustafa Suleyman",
+          "timestamp": 1760,
+          "novelty": 1,
+          "verifiable": 1
+        }
+      ]
+    },
+    {
+      "rank": 12,
+      "episode_id": "yt:kTv2BhOVx_8",
+      "title": "Anthropic CEO: We May Not Be Able To Stop What's Coming",
+      "url": "https://www.youtube.com/watch?v=kTv2BhOVx_8",
+      "source": "Neural Nutshell",
+      "tier": 2,
+      "published": "2026-10-18",
+      "score": 3,
+      "reason": "Recap channel cutting clips of Amodei's CBS interview with narration; real Dario audio, but safety/policy only and secondhand framing.",
+      "claims": [
+        {
+          "ticker": [
+            "private:Anthropic"
+          ],
+          "claim": "Amodei says AI progress is at the bend of the exponential where it starts to get steeper.",
+          "speaker": "Dario Amodei",
+          "timestamp": 20,
+          "novelty": 0,
+          "verifiable": 0
+        }
+      ]
+    },
+    {
+      "rank": 13,
+      "episode_id": "yt:pF-NoPMBvfY",
+      "title": "Anthropic CEO: We're NOT Ready For The Tsunami",
+      "url": "https://www.youtube.com/watch?v=pF-NoPMBvfY",
+      "source": "Library Of Wealth",
+      "tier": 2,
+      "published": "2026-10-16",
+      "score": 3,
+      "reason": "Recap channel splicing Amodei's Nikhil Kamath interview with narration; cites a Stanford payroll study but little new investing signal.",
+      "claims": [
+        {
+          "ticker": [
+            "private:Anthropic"
+          ],
+          "claim": "Narrator cites Stanford's Aug 2026 ADP study: employment of 22-25 year olds in the most AI-exposed jobs is about 19% below trend.",
+          "speaker": "narrator",
+          "timestamp": 920,
+          "novelty": 1,
+          "verifiable": 3
+        }
+      ]
+    },
+    {
+      "rank": 14,
+      "episode_id": "yt:W8xXZ_yOoQs",
+      "title": "(Việt Hóa) Alexandr Wang : AI Sẽ Thay Đổi Thế Giới Nhanh Đến Mức Nào?",
+      "url": "https://www.youtube.com/watch?v=W8xXZ_yOoQs",
+      "source": "Hoang P",
+      "tier": 2,
+      "published": "2026-10-20",
+      "score": 2,
+      "reason": "Re-upload with Vietnamese subtitles of an older Wang talk; founder story and vague 'personal superintelligence' talk, nothing new this week.",
+      "claims": [
+        {
+          "ticker": [
+            "META"
+          ],
+          "claim": "Wang says Meta envisions business agents collaborating with personal agents, with creator counts growing into the billions.",
+          "speaker": "Alexandr Wang",
+          "timestamp": 760,
+          "novelty": 0,
+          "verifiable": 0
+        }
+      ]
+    },
+    {
+      "rank": 15,
+      "episode_id": "rss:0a6709259a465f66",
+      "title": "How AMD's Lisa Su Views the Future of AI",
+      "url": "https://podcasts.apple.com/us/podcast/how-amds-lisa-su-views-the-future-of-ai/id1886705492?i=1000756327576&uo=4",
+      "source": "Harvard Business Review",
+      "tier": 2,
+      "published": "2026-10-17",
+      "score": 2,
+      "reason": "Low confidence, no transcript: HBR re-release of a Dec 2024 Lisa Su interview; stale for this week.",
+      "claims": []
+    }
+  ]
+}
