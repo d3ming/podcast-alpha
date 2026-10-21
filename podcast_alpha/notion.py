@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Publishes the digest as a Notion page through the public API (NOTION_TOKEN + NOTION_PARENT_PAGE_ID)."""
 import os
 import re

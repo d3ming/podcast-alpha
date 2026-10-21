@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import hashlib
 import json
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-import feedparser
 
 from .config import Source
 
@@ -66,7 +68,10 @@ def transcript_links(entry) -> list[dict]:
 
 
 def from_rss(src: Source, now: datetime, days: int, parsed=None) -> list[Episode]:
-    feed = parsed if parsed is not None else feedparser.parse(src.rss)
+    if parsed is None:
+        import feedparser
+        parsed = feedparser.parse(src.rss)
+    feed = parsed
     out = []
     for e in feed.entries:
         dt = parse_date(e.get("published") or e.get("updated"))
@@ -84,7 +89,7 @@ def from_rss(src: Source, now: datetime, days: int, parsed=None) -> list[Episode
 
 
 def _yt_json(args: list[str]) -> list[dict]:
-    res = subprocess.run(["yt-dlp", "-j", "--skip-download", "--no-warnings", *args],
+    res = subprocess.run([sys.executable, "-m", "yt_dlp", "-j", "--skip-download", "--no-warnings", *args],
                          capture_output=True, text=True, timeout=300)
     return [json.loads(l) for l in res.stdout.splitlines() if l.strip()]
 

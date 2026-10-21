@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Holdings are held in memory for the run only. They are never logged, printed or written to disk."""
 import requests
 

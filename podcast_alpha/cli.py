@@ -1,16 +1,19 @@
+from __future__ import annotations
+
 import argparse
 import os
 import sys
 from pathlib import Path
 
-from . import notion, ranked
-from .digest import render
-from .fetch import fetch
+from .fetch import fetch, merge
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
 def publish(args) -> None:
+    from . import notion, ranked
+    from .digest import render
+
     try:
         data = ranked.load(args.ranked)
         warnings = ranked.validate(data)
@@ -42,6 +45,12 @@ def main(argv=None):
     f.add_argument("--people", default=str(ROOT / "people.yaml"), help="people watchlist; empty string disables")
     f.add_argument("--per-person", type=int, default=3)
     f.add_argument("--run-name", help="run folder name (default: today's date)")
+    f.add_argument("--youtube-only", action="store_true", help="YouTube channels and person search only, written to --out")
+    f.add_argument("--out", default="pa-yt-out", help="output dir for --youtube-only")
+    m = sub.add_parser("merge", help="merge a --youtube-only output dir into a run folder")
+    m.add_argument("dir")
+    m.add_argument("--into", required=True)
+    m.add_argument("--db", default=str(ROOT / "data" / "podcast_alpha.sqlite"))
     f.add_argument("--refetch", action="store_true", help="include episodes already in the dedupe DB")
     p = sub.add_parser("publish", help="validate ranked.json and render the digest")
     p.add_argument("ranked")
@@ -49,7 +58,7 @@ def main(argv=None):
     p.add_argument("--top-claims", type=int, default=3)
     p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
-    fetch(args) if args.cmd == "fetch" else publish(args)
+    {"fetch": fetch, "merge": merge, "publish": publish}[args.cmd](args)
 
 
 if __name__ == "__main__":

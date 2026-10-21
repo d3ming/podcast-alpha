@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import re
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote_plus
 
-import requests
 import yaml
 
 from .ingest import Episode, _yt_json, canonical_id, in_window, parse_date
@@ -96,6 +97,8 @@ def parse_itunes(person: Person, results: list[dict], now: datetime, days: int, 
 
 
 def from_itunes(person: Person, now: datetime, days: int) -> list[Episode]:
+    import requests
+
     r = requests.get("https://itunes.apple.com/search", timeout=30,
                      params={"term": person.name, "media": "podcast", "entity": "podcastEpisode", "limit": 50})
     r.raise_for_status()
@@ -116,10 +119,12 @@ def dedupe(channel_eps: list[Episode], person_eps: list[Episode], threshold: flo
     return kept
 
 
-def discover_people(people: list[Person], now: datetime, days: int, channel_eps: list[Episode], per_person: int = 3) -> tuple[list[Episode], dict]:
-    found, counts, errors = [], {"youtube": 0, "itunes": 0}, []
+def discover_people(people: list[Person], now: datetime, days: int, channel_eps: list[Episode], per_person: int = 3,
+                    via: tuple[str, ...] = ("youtube", "itunes")) -> tuple[list[Episode], dict]:
+    found, counts, errors = [], {v: 0 for v in via}, []
+    fns = {"youtube": from_youtube_search, "itunes": from_itunes}
     for p in sorted(people, key=lambda p: p.priority != "core"):
-        for src, fn in (("youtube", from_youtube_search), ("itunes", from_itunes)):
+        for src, fn in ((v, fns[v]) for v in via):
             try:
                 eps = fn(p, now, days)
             except Exception as exc:
