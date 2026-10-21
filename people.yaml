@@ -55,3 +55,28 @@ people:
   - {name: Josh Kushner, role: Thrive Capital, priority: watch}
   - {name: David George, role: a16z, priority: watch}
   - {name: Dan Loeb, role: Third Point, priority: watch}
+  # Added 2026-10-21 from the TMTB Podcast Intel miss analysis (Oct 8-21).
+  - {name: Eric Schmidt, role: former Google CEO, priority: core}
+  - {name: Michael Dell, role: Dell Technologies CEO, priority: core}
+  - {name: Sarah Friar, role: OpenAI CFO, priority: core}
+  - {name: Vlad Tenev, role: Robinhood CEO, priority: core}
+  - {name: Aaron Levie, role: Box CEO, priority: watch}
+  - {name: Guillermo Rauch, role: Vercel CEO, priority: watch}
+  - {name: Matt Garman, role: AWS CEO, priority: core}
+  - {name: Cristiano Amon, role: Qualcomm CEO, priority: watch}
+  - {name: Matthew Prince, role: Cloudflare CEO, priority: watch}
+  - {name: Pat Gelsinger, role: former Intel CEO, priority: watch}
+  - {name: Dylan Field, role: Figma CEO, priority: watch}
+  - {name: Mike Cannon-Brookes, role: Atlassian CEO, priority: watch}
+  - {name: Sridhar Ramaswamy, role: Snowflake CEO, priority: watch}
+  - {name: Matt Murphy, role: Marvell CEO, priority: watch}
+  - {name: Sanjay Mehrotra, role: Micron CEO, priority: watch}
+  - {name: Josh Woodward, role: Google Labs and Gemini app head, priority: watch}
+  - {name: Kevin Weil, role: OpenAI, priority: watch}
+  - {name: Paul Tudor Jones, role: Tudor Investment, priority: watch}
+  - {name: Stacy Rasgon, role: Bernstein semis analyst, priority: watch}
+  - {name: Dylan Patel, role: SemiAnalysis, priority: core}
+  - {name: Nathan Lambert, role: Interconnects, priority: watch}
+  - {name: David Silver, role: Ineffable Intelligence, priority: watch}
+  - {name: Amin Vahdat, role: Google AI infrastructure, priority: watch}
+  - {name: Paul Prager, role: TeraWulf CEO, priority: watch}

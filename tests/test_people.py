@@ -16,7 +16,7 @@ def ep(id, title, src="person:Jensen Huang"):
 
 def test_people_yaml_loads_without_holdings():
     people = load_people("people.yaml")
-    assert len(people) == 54 and {p.priority for p in people} == {"core", "watch"}
+    assert len(people) == 78 and {p.priority for p in people} == {"core", "watch"}
     text = open("people.yaml").read().lower()
     assert not any(w in text for w in ("ticker", "weight", "holding", "shares"))
 

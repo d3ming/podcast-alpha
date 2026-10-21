@@ -22,7 +22,7 @@ pytest -q
 
 `podcast-alpha fetch --days 7 [--only odd-lots,bg2] [--per-source 3] [--refetch]`
 
-- Sources come from [`sources.yaml`](sources.yaml) (9 shows, tiers 1-3, tier 3 capped at 2) and
+- Sources come from [`sources.yaml`](sources.yaml) (shows, keynote and earnings-call feeds; tiers 1-3, tier 3 capped at 2) and
   [`people.yaml`](people.yaml) (people watchlist, `priority: core|watch`, optional `aliases`; no holdings).
 - Each entry has `preferred_source` and `fallback` (defaults at the top of each file). Everything is free and keyless.
   - shows: `rss` (channel podcasts, keynote feeds, earnings-call feeds). `ytdlp` only runs on the Mac (below).

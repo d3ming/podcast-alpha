@@ -27,3 +27,32 @@ sources:
   - {id: calls-salesforce, name: Salesforce earnings call, tier: 2, rss: "https://casti.fyi/rss/4938a833f6768979f12a0971.xml", topics: [earnings]}
   - {id: calls-servicenow, name: ServiceNow earnings call, tier: 2, rss: "https://casti.fyi/rss/c8d945686a3d30f160fec3f4.xml", topics: [earnings]}
   - {id: calls-applovin, name: AppLovin earnings call, tier: 2, rss: "https://casti.fyi/rss/d2b83626e5eca3d6ab7ac5aa.xml", topics: [earnings]}
+  # Added 2026-10-21 from the TMTB Podcast Intel miss analysis (Oct 8-21).
+  - {id: forward-future, name: "Forward Future Interviews", tier: 1, rss: "https://rss.buzzsprout.com/2640889.rss", topics: [ai]}
+  - {id: in-good-company, name: "In Good Company with Nicolai Tangen", tier: 1, rss: "https://feeds.acast.com/public/shows/622618c7057f3400120d15db", topics: [investing]}
+  - {id: semafor-future-proof, name: "Future Proof from Semafor Technology", tier: 1, rss: "https://feeds.megaphone.fm/future-proof-from-semafor-technology", topics: [tech]}
+  - {id: sources-alex-heath, name: "Sources with Alex Heath", tier: 1, rss: "https://api.substack.com/feed/podcast/3525780.rss", topics: [tech]}
+  - {id: mts, name: "MTS", tier: 1, rss: "https://anchor.fm/s/1110125e0/podcast/rss", topics: [ai]}
+  - {id: supply-chained, name: "Supply Chained", tier: 1, rss: "https://anchor.fm/s/111a4f378/podcast/rss", topics: [semis]}
+  - {id: squawk-pod, name: "Squawk Pod", tier: 1, rss: "https://feeds.simplecast.com/VHAcgaw_", topics: [markets]}
+  - {id: big-technology, name: "Big Technology Podcast", tier: 1, rss: "https://feeds.megaphone.fm/LI3617121267", topics: [tech]}
+  - {id: all-in, name: "All-In Podcast", tier: 1, rss: "https://rss.libsyn.com/shows/254861/destinations/1928300.xml", topics: [tech, investing]}
+  - {id: the-circuit, name: "The Circuit", tier: 1, rss: "https://feeds.transistor.fm/the-circuit", topics: [semis]}
+  - {id: a16z-show, name: "The a16z Show", tier: 1, rss: "https://feeds.simplecast.com/JGE3yC0V", topics: [tech]}
+  - {id: interconnects, name: "Interconnects", tier: 2, rss: "https://api.substack.com/feed/podcast/48206.rss", topics: [ai]}
+  - {id: semi-doped, name: "Semi Doped", tier: 1, rss: "https://rss.buzzsprout.com/2570635.rss", topics: [semis]}
+  - {id: sourcery, name: "Sourcery", tier: 2, rss: "https://anchor.fm/s/f192713c/podcast/rss", topics: [tech]}
+  - {id: wsj-tech-news-briefing, name: "WSJ Tech News Briefing", tier: 2, rss: "https://video-api.shdsvc.dowjones.io/api/podcasts/feed/the%20wall%20street%20journal%20tech%20talk", topics: [tech]}
+  - {id: cheeky-pint, name: "Cheeky Pint", tier: 1, rss: "https://feeds.transistor.fm/cheeky-pint-with-john-collison", topics: [tech]}
+  - {id: david-senra, name: "David Senra", tier: 2, rss: "https://feeds.megaphone.fm/david-senra", topics: [business]}
+  - {id: training-data, name: "Training Data", tier: 1, rss: "https://feeds.megaphone.fm/trainingdata", topics: [ai]}
+  - {id: thursdai, name: "ThursdAI", tier: 2, rss: "https://api.substack.com/feed/podcast/1801228.rss", topics: [ai]}
+  - {id: 20vc, name: "The Twenty Minute VC", tier: 2, rss: "https://rss.libsyn.com/shows/61840/destinations/240976.xml", topics: [investing]}
+  - {id: lennys-podcast, name: "Lenny's Podcast", tier: 2, rss: "https://api.substack.com/feed/podcast/10845.rss", topics: [tech]}
+  - {id: monetary-matters, name: "Monetary Matters with Jack Farley", tier: 2, rss: "https://feeds.megaphone.fm/EWWMN1909747317", topics: [macro, semis]}
+  - {id: cnbc-halftime, name: "CNBC Halftime Report", tier: 1, rss: "https://feeds.simplecast.com/qltQrd_8", topics: [markets]}
+  - {id: cnbc-squawk-street, name: "CNBC Squawk on the Street", tier: 2, rss: "https://feeds.simplecast.com/GcylmXl7", topics: [markets]}
+  - {id: cnbc-power-lunch, name: "CNBC Power Lunch", tier: 2, rss: "https://feeds.simplecast.com/_qvRgwME", topics: [markets]}
+  - {id: confession-partovi, name: "Confession with Ali Partovi", tier: 2, rss: "https://rss2.flightcast.com/ktf0bucx8pc8emdwamn9vwjj.xml", topics: [tech]}
+  - {id: deep-view, name: "The Deep View: Conversations", tier: 2, rss: "https://feeds.transistor.fm/tdv", topics: [ai]}
+  - {id: pioneers-of-ai, name: "Pioneers of AI", tier: 2, rss: "https://rss.art19.com/pioneers-of-ai", topics: [ai]}
