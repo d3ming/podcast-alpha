@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta, timezone
@@ -52,7 +53,8 @@ def write_episode(run_dir: Path, ep: Episode, segs, tsrc) -> dict:
     return {"episode_id": ep.id, "file": name, "title": ep.title, "source": ep.source_name, "source_tag": ep.source_id,
             "via": ep.via or "channel", "tier": ep.tier, "published": ep.published_at.date().isoformat(), "url": ep.url,
             "transcript_source": tsrc, "has_transcript": bool(segs),
-            "transcript_minutes": round(segs[-1]["start"] / 60) if segs else 0}
+            "transcript_minutes": round(segs[-1]["start"] / 60) if segs else 0, "audio_url": ep.audio_url,
+            "youtube_id": ep.youtube_id}
 
 
 def load_manifest(run_dir: Path, now: datetime, days) -> dict:
@@ -73,10 +75,10 @@ def youtube_only(args, now: datetime) -> Path:
         eps += person_eps
     out = Path(args.out)
     (out / "transcripts").mkdir(parents=True, exist_ok=True)
-    rows = []
+    rows, budget = [], Budget(600 if args.whisper_minutes is None else args.whisper_minutes, args.whisper_per_episode)
     for ep in eps:
-        ep.methods = ["youtube_captions"]
-        segs, tsrc = get_transcript(ep)
+        ep.methods = ["youtube_captions", "youtube_audio"]
+        segs, tsrc = get_transcript(ep, budget)
         rows.append(ep_to_dict(ep, segs, tsrc))
         (out / "transcripts" / f"{slug(ep.id)}.md").write_text(episode_md(ep, segs, tsrc))
         print(f"[episode] {ep.source_id}: transcript={tsrc or 'none'}")
@@ -137,7 +139,7 @@ def fetch(args) -> Path:
     if args.people:
         person_eps, manifest["people"] = discover_people(load_people(args.people), now, args.days, eps + known, args.per_person)
         eps += person_eps
-    budget = Budget(args.whisper_minutes, args.whisper_per_episode)
+    budget = Budget(args.whisper_minutes or 0, args.whisper_per_episode)
     eps.sort(key=lambda e: (e.source_id.startswith("person:"), e.tier, -e.published_at.timestamp()))
     for ep in eps:
         dup = not args.refetch and (store.seen(ep.id) or any(k.id != ep.id and title_match(k.title, ep.title) >= 0.8 for k in known))
@@ -152,3 +154,58 @@ def fetch(args) -> Path:
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
     print(f"[run] {run_dir} ({len(manifest['episodes'])} episodes)")
     return run_dir
+
+
+def transcribe_run(args) -> Path:
+    from .store import Store
+    from .transcribe import from_rss_tag
+    from .whisper import transcribe
+
+    run_dir = Path(args.run)
+    path = run_dir / "manifest.json"
+    budget, store = Budget(args.minutes, args.per_episode), Store(args.db) if args.db else None
+    lock = run_dir / "transcribe.lock"
+    if lock.exists() and not args.force:
+        raise SystemExit(f"[transcribe] {lock} exists; another job may be running (use --force)")
+    lock.write_text(str(os.getpid()))
+    try:
+        while True:
+            manifest = json.loads(path.read_text())
+            todo = [e for e in manifest["episodes"] if not e["has_transcript"] and e.get("audio_url") and not e.get("whisper_error")]
+            if not todo or budget.take() < 60:
+                break
+            e = todo[0]
+            log(f"start {e['episode_id']} ({len(todo)} left, {round(budget.left / 60)} min budget) {e['title'][:60]}")
+            try:
+                segs, used = transcribe(e["audio_url"], budget)
+                tsrc = f"whisper ({round(used / 60)} min)"
+            except Exception as exc:
+                segs, tsrc, e["whisper_error"] = None, None, type(exc).__name__
+            if segs:
+                md = run_dir / e["file"]
+                md.write_text(with_transcript(md.read_text(), segs, tsrc))
+                e.update(has_transcript=True, transcript_source=tsrc, transcript_minutes=round(segs[-1]["start"] / 60))
+                if store:
+                    store.set_transcript(e["episode_id"], tsrc)
+            elif not e.get("whisper_error"):
+                e["whisper_error"] = "empty"
+            manifest["whisper_minutes"] = round(manifest.get("whisper_minutes", 0) + (used if segs else 0) / 60, 1)
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+            tmp.replace(path)
+            log(f"done {e['episode_id']} {tsrc or e.get('whisper_error')}")
+    finally:
+        lock.unlink(missing_ok=True)
+    log(f"finished, {round(budget.used / 60, 1)} min used")
+    return run_dir
+
+
+def log(msg: str) -> None:
+    print(f"[transcribe] {datetime.now().strftime('%H:%M:%S')} {msg}", flush=True)
+
+
+def with_transcript(md: str, segs: list[dict], tsrc: str) -> str:
+    head, _, _ = md.partition("## Transcript")
+    head = re.sub(r"^transcript_source: .*$", f"transcript_source: {tsrc}", head, count=1, flags=re.M)
+    lines = [f"[{fmt_ts(s['start'])}] {s['speaker'] + ': ' if s.get('speaker') else ''}{s['text']}" for s in segs]
+    return head + "## Transcript\n\n" + "\n".join(lines) + "\n"

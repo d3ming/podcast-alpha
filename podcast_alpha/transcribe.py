@@ -127,14 +127,15 @@ def get_transcript(ep, budget=None) -> tuple[list[dict] | None, str | None]:
                 print(f"[whisper] {ep.id}: {type(exc).__name__}")
                 continue
             label = f"whisper ({round(used / 60)} min)"
-        elif m == "supadata" and ep.youtube_id:
-            from . import supadata
+        elif m == "youtube_audio" and ep.youtube_id:
+            from .whisper import transcribe_youtube
 
-            if supadata.key():
-                try:
-                    segs = supadata.transcript(ep.youtube_id)
-                except Exception as exc:
-                    print(f"[supadata] {ep.id}: {type(exc).__name__}")
+            try:
+                segs, used = transcribe_youtube(ep.youtube_id, budget)
+            except Exception as exc:
+                print(f"[whisper] {ep.id}: {type(exc).__name__}")
+                continue
+            label = f"whisper ({round(used / 60)} min, youtube audio)"
         elif m == "youtube_captions" and ep.youtube_id:
             segs, label = from_youtube(ep.youtube_id), "youtube-captions"
         elif m == "youtube_mirror" and not ep.youtube_id:

@@ -5,9 +5,9 @@ from pathlib import Path
 
 import yaml
 
-DISCOVERY = {"rss", "supadata", "ytdlp"}
-METHODS = {"podcast_transcript", "whisper", "supadata", "youtube_captions", "youtube_mirror"}
-DEFAULTS = {"preferred_source": "rss", "fallback": ["supadata", "ytdlp"], "transcripts": ["podcast_transcript", "whisper", "supadata"]}
+DISCOVERY = {"rss", "ytdlp"}
+METHODS = {"podcast_transcript", "whisper", "youtube_captions", "youtube_mirror", "youtube_audio"}
+DEFAULTS = {"preferred_source": "rss", "fallback": [], "transcripts": ["podcast_transcript", "whisper"]}
 
 
 @dataclass
@@ -24,7 +24,7 @@ class Source:
 
     @property
     def order(self) -> list[str]:
-        have = {"rss": bool(self.rss), "supadata": bool(self.youtube), "ytdlp": bool(self.youtube)}
+        have = {"rss": bool(self.rss), "ytdlp": bool(self.youtube)}
         return [s for s in dict.fromkeys([self.preferred_source, *self.fallback]) if have[s]]
 
 

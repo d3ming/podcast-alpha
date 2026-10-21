@@ -18,22 +18,32 @@ pip install -e '.[dev,whisper]'   # pytest and faster-whisper (CPU, int8)
 pytest -q
 ```
 
-Optional: `SUPADATA_API_KEY` enables YouTube channel/person search and transcripts through Supadata. Without it those
-steps are skipped and listed under `skipped_sources` in the manifest.
-
 ## fetch
 
 `podcast-alpha fetch --days 7 [--only odd-lots,bg2] [--per-source 3] [--refetch]`
 
 - Sources come from [`sources.yaml`](sources.yaml) (9 shows, tiers 1-3, tier 3 capped at 2) and
   [`people.yaml`](people.yaml) (people watchlist, `priority: core|watch`, optional `aliases`; no holdings).
-- Each entry has `preferred_source` and `fallback` (defaults at the top of each file):
-  - shows: `rss`, then `supadata`, then `ytdlp`. RSS is the default; YouTube is only for video-only content.
-  - people: `itunes` (keyless iTunes Search), plus `supadata` YouTube search for priorities in `youtube_priority`
-    (default `core`). Podcast Index needs a key and is skipped. Person episodes are tagged `source_id: person:<name>`.
-- `transcripts` sets the order: `podcast_transcript` (the feed's tag, also looked up for iTunes hits), `whisper`
-  (faster-whisper `base.en`, CPU int8; `--whisper-minutes 120` per run, `--whisper-per-episode 45`), `supadata`,
-  `youtube_captions`, `youtube_mirror`.
+- Each entry has `preferred_source` and `fallback` (defaults at the top of each file). Everything is free and keyless.
+  - shows: `rss` (channel podcasts, keynote feeds, earnings-call feeds). `ytdlp` only runs on the Mac (below).
+  - people: `itunes` (iTunes Search). Podcast Index needs a key and is skipped. Person episodes are tagged
+    `source_id: person:<name>`.
+- `transcripts` sets the order: `podcast_transcript` (the feed's tag, also looked up for iTunes hits), `whisper`,
+  `youtube_captions`, `youtube_audio` (yt-dlp bestaudio + whisper), `youtube_mirror`.
+- `fetch` does not run whisper by default (`--whisper-minutes 0`); episodes keep `audio_url` in the manifest.
+
+## transcribe
+
+`podcast-alpha transcribe runs/<name> [--minutes 600] [--per-episode N] [--db data/podcast_alpha.sqlite]`
+
+faster-whisper (`base.en`, CPU, int8; `PA_WHISPER_MODEL` overrides) works through episodes without a transcript, whole
+episodes by default, until the minute budget runs out. It saves the manifest after each episode, so it is resumable;
+failures are recorded as `whisper_error` and skipped next time. A `transcribe.lock` blocks a second job. Run it detached:
+
+```
+nohup .venv/bin/python -m podcast_alpha.cli transcribe runs/<name> > runs/<name>/transcribe.log 2>&1 &
+```
+
 - Dedupe: SQLite (`data/podcast_alpha.sqlite`) keyed by episode id (RSS guid, else YouTube id). Seen episodes
   are skipped and listed under `skipped_seen`; `--refetch` includes them again.
 - Output in `runs/<YYYY-MM-DD>/` (git-ignored):
@@ -41,10 +51,18 @@ steps are skipped and listed under `skipped_sources` in the manifest.
     `url`, `youtube_id`, `transcript_source`), the description, then the transcript as `[h:mm:ss] Speaker: text`.
   - `manifest.json`: every episode, including those without a transcript (`has_transcript: false`).
 
-## YouTube fallback off the box
+## YouTube fallback on the Mac (manual)
 
-`fetch --youtube-only --days 7 --out <dir>` runs yt-dlp channel and person search with captions into a self-contained
-dir (needs only yt-dlp, youtube-transcript-api, pyyaml). `merge <dir> --into runs/<name>` dedupes it into a run.
+For video-only content, from `~/projects/podcast-alpha` on a residential connection:
+
+```
+cd ~/projects/podcast-alpha && git pull -q --ff-only && python3 -m venv .venv && .venv/bin/pip install -q yt-dlp youtube-transcript-api pyyaml faster-whisper 'av<16' && rm -rf /tmp/pa-yt && .venv/bin/python -m podcast_alpha.cli fetch --youtube-only --days 7 --out /tmp/pa-yt/out && tar czf /tmp/pa-yt.tgz -C /tmp/pa-yt out && echo /tmp/pa-yt.tgz
+```
+
+YouTube channels and person search run through yt-dlp at a slow pace (`--sleep-requests`, `--sleep-interval`,
+`--limit-rate`). Captions are used when available; otherwise bestaudio is downloaded and transcribed with whisper
+(skipped if faster-whisper is not installed; `--whisper-minutes` defaults to 600). The output dir is self-contained.
+On the box: `podcast-alpha merge <dir> --into runs/<name>` dedupes it against the DB and the run.
 
 ## rank (bot)
 

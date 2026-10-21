@@ -91,7 +91,7 @@ def from_rss(src: Source, now: datetime, days: int, parsed=None) -> list[Episode
 
 
 def _yt_json(args: list[str]) -> list[dict]:
-    res = subprocess.run([sys.executable, "-m", "yt_dlp", "-j", "--skip-download", "--no-warnings", *args],
+    res = subprocess.run([sys.executable, "-m", "yt_dlp", "-j", "--skip-download", "--no-warnings", "--sleep-requests", "1", *args],
                          capture_output=True, text=True, timeout=300)
     return [json.loads(l) for l in res.stdout.splitlines() if l.strip()]
 
@@ -124,25 +124,7 @@ def from_youtube(src: Source, now: datetime, days: int, max_items: int = 8) -> l
     return out
 
 
-def from_supadata(src: Source, now: datetime, days: int, max_items: int = 8) -> list[Episode]:
-    from . import supadata
-
-    if not supadata.key():
-        raise LookupError(f"{supadata.ENV} not set")
-    out = []
-    for vid in supadata.channel_videos(src.youtube.split("youtube.com/")[-1].split("/")[0], max_items):
-        info = supadata.video(vid)
-        dt = parse_date(info.get("uploadDate"))
-        if not dt or not in_window(dt, now, days) or (info.get("duration") or 0) < 300:
-            continue
-        out.append(Episode(
-            id=canonical_id(None, vid, None), source_id=src.id, source_name=src.name, tier=src.tier,
-            title=info.get("title", ""), url=f"https://www.youtube.com/watch?v={vid}", published_at=dt, youtube_id=vid,
-            description=(info.get("description") or "")[:2000], via="supadata"))
-    return out
-
-
-FINDERS = {"rss": from_rss, "supadata": from_supadata, "ytdlp": from_youtube}
+FINDERS = {"rss": from_rss, "ytdlp": from_youtube}
 
 
 def find(src: Source, now: datetime, days: int) -> tuple[list[Episode], str]:

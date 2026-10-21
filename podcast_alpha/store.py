@@ -30,6 +30,10 @@ class Store:
         self.db.commit()
         return cur.rowcount == 1
 
+    def set_transcript(self, episode_id: str, transcript_source: str) -> None:
+        self.db.execute("UPDATE episodes SET transcript_source=? WHERE id=?", (transcript_source, episode_id))
+        self.db.commit()
+
     def known_since(self, since) -> list[SimpleNamespace]:
         rows = self.db.execute("SELECT id, title FROM episodes WHERE published_at >= ? AND source_id NOT LIKE 'person:%'",
                                (since.isoformat(),)).fetchall()

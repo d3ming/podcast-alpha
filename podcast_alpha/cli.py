@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 
-from .fetch import fetch, merge
+from .fetch import fetch, merge, transcribe_run
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -45,10 +45,16 @@ def main(argv=None):
     f.add_argument("--people", default=str(ROOT / "people.yaml"), help="people watchlist; empty string disables")
     f.add_argument("--per-person", type=int, default=3)
     f.add_argument("--run-name", help="run folder name (default: today's date)")
-    f.add_argument("--whisper-minutes", type=float, default=120, help="audio minutes faster-whisper may transcribe per run")
-    f.add_argument("--whisper-per-episode", type=float, default=45, help="audio minutes per episode")
+    f.add_argument("--whisper-minutes", type=float, help="whisper minutes inside fetch (default 0 on the box, 600 with --youtube-only)")
+    f.add_argument("--whisper-per-episode", type=float, help="cap per episode in minutes (default: whole episode)")
     f.add_argument("--youtube-only", action="store_true", help="YouTube channels and person search only, written to --out")
     f.add_argument("--out", default="pa-yt-out", help="output dir for --youtube-only")
+    t = sub.add_parser("transcribe", help="whisper untranscribed episodes in a run folder; resumable, run it detached")
+    t.add_argument("run")
+    t.add_argument("--minutes", type=float, default=600)
+    t.add_argument("--per-episode", type=float)
+    t.add_argument("--db", help="also record transcript_source in this SQLite DB")
+    t.add_argument("--force", action="store_true", help="ignore a stale transcribe.lock")
     m = sub.add_parser("merge", help="merge a --youtube-only output dir into a run folder")
     m.add_argument("dir")
     m.add_argument("--into", required=True)
@@ -60,7 +66,7 @@ def main(argv=None):
     p.add_argument("--top-claims", type=int, default=3)
     p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
-    {"fetch": fetch, "merge": merge, "publish": publish}[args.cmd](args)
+    {"fetch": fetch, "merge": merge, "transcribe": transcribe_run, "publish": publish}[args.cmd](args)
 
 
 if __name__ == "__main__":

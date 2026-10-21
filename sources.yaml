@@ -1,7 +1,7 @@
 # Tiers from the 2026-10-10 ranking and Spec v0.1. T3 is capped per week.
 t3_weekly_cap: 2
-# Discovery: preferred_source, then fallback (rss, supadata, ytdlp). Transcripts: tried in order.
-defaults: {preferred_source: rss, fallback: [supadata, ytdlp], transcripts: [podcast_transcript, whisper, supadata]}
+# Discovery: preferred_source, then fallback (rss, ytdlp). Transcripts: tried in order; whisper runs in `transcribe`.
+defaults: {preferred_source: rss, fallback: [], transcripts: [podcast_transcript, whisper]}
 sources:
   - {id: dwarkesh, name: Dwarkesh Podcast, tier: 1, rss: "https://api.substack.com/feed/podcast/69345.rss", topics: [ai]}
   - {id: odd-lots, name: Odd Lots, tier: 1, rss: "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/8a94442e-5a74-4fa2-8b8d-ae27003a8d6b/982f5071-765c-403d-969d-ae27003a8d83/podcast.rss", topics: [macro, markets]}
@@ -12,3 +12,18 @@ sources:
   - {id: bg2, name: BG2 Pod, tier: 1, rss: "https://anchor.fm/s/f06c2370/podcast/rss", youtube: "https://www.youtube.com/@Bg2Pod/videos", topics: [tech, investing]}
   - {id: chip-stock-investor, name: Chip Stock Investor, tier: 2, rss: "https://anchor.fm/s/e2cacf78/podcast/rss", youtube: "https://www.youtube.com/@ChipStockInvestor/videos", topics: [semis]}
   - {id: ticker-symbol-you, name: Ticker Symbol YOU, tier: 3, rss: "https://rss.buzzsprout.com/1805490.rss", youtube: "https://www.youtube.com/@TickerSymbolYOU/videos", topics: [stocks]}
+  - {id: apple-events, name: Apple Events, tier: 2, rss: "https://rss.art19.com/apple-events", topics: [keynotes]}
+  - {id: berkshire-meetings, name: Berkshire Hathaway Annual Meetings, tier: 2, rss: "https://anchor.fm/s/1134b190/podcast/rss", topics: [keynotes, investing]}
+  - {id: calls-nvidia, name: NVIDIA earnings call, tier: 2, rss: "https://casti.fyi/rss/b36592e77a525c0f109d1bc9.xml", topics: [earnings]}
+  - {id: calls-amazon, name: Amazon earnings call, tier: 2, rss: "https://casti.fyi/rss/f58cc401126b88a2fc2fdc80.xml", topics: [earnings]}
+  - {id: calls-alphabet, name: Alphabet earnings call, tier: 2, rss: "https://casti.fyi/rss/9eacb9926db81f2266a77aa6.xml", topics: [earnings]}
+  - {id: calls-meta, name: Meta earnings call, tier: 2, rss: "https://casti.fyi/rss/3437762148822bf05ced474b.xml", topics: [earnings]}
+  - {id: calls-microsoft, name: Microsoft earnings call, tier: 2, rss: "https://casti.fyi/rss/fcacc710e8cdbd861bccc6b3.xml", topics: [earnings]}
+  - {id: calls-apple, name: Apple earnings call, tier: 2, rss: "https://casti.fyi/rss/144ea3762732432e8ec37a1d.xml", topics: [earnings]}
+  - {id: calls-tesla, name: Tesla earnings call, tier: 2, rss: "https://casti.fyi/rss/fc22d490dcd03d58e07f2450.xml", topics: [earnings]}
+  - {id: calls-amd, name: AMD earnings call, tier: 2, rss: "https://casti.fyi/rss/bbfe9fcec034a7fed021acee.xml", topics: [earnings]}
+  - {id: calls-broadcom, name: Broadcom earnings call, tier: 2, rss: "https://casti.fyi/rss/5ca295d5e362d35d569cffb9.xml", topics: [earnings]}
+  - {id: calls-oracle, name: Oracle earnings call, tier: 2, rss: "https://casti.fyi/rss/07e2ff9bd41a4819d9c9c067.xml", topics: [earnings]}
+  - {id: calls-salesforce, name: Salesforce earnings call, tier: 2, rss: "https://casti.fyi/rss/4938a833f6768979f12a0971.xml", topics: [earnings]}
+  - {id: calls-servicenow, name: ServiceNow earnings call, tier: 2, rss: "https://casti.fyi/rss/c8d945686a3d30f160fec3f4.xml", topics: [earnings]}
+  - {id: calls-applovin, name: AppLovin earnings call, tier: 2, rss: "https://casti.fyi/rss/d2b83626e5eca3d6ab7ac5aa.xml", topics: [earnings]}

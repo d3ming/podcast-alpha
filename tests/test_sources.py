@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from podcast_alpha import ingest, people, supadata, transcribe
+from podcast_alpha import ingest, people, transcribe, whisper
 from podcast_alpha.config import Source, load_sources
 from podcast_alpha.ingest import Episode
 from podcast_alpha.people import Person, feed_transcripts, load_people
@@ -21,8 +21,11 @@ def test_sources_defaults_prefer_rss():
     sources, _ = load_sources("sources.yaml")
     assert all(s.preferred_source == "rss" and s.rss for s in sources)
     bg2 = next(s for s in sources if s.id == "bg2")
-    assert bg2.order == ["rss", "supadata", "ytdlp"] and bg2.transcripts[0] == "podcast_transcript"
-    assert Source("a", "A", 1, rss="x", preferred_source="rss", fallback=["supadata"]).order == ["rss"]
+    assert bg2.order == ["rss"] and bg2.transcripts == ["podcast_transcript", "whisper"]
+    assert Source("a", "A", 1, rss="x", fallback=["ytdlp"]).order == ["rss"]
+    assert Source("a", "A", 1, rss="x", youtube="y", fallback=["ytdlp"]).order == ["rss", "ytdlp"]
+    assert "supadata" not in open("sources.yaml").read() + open("people.yaml").read()
+    assert sum(s.id.startswith("calls-") for s in sources) >= 10
 
 
 def test_unknown_method_rejected(tmp_path):
@@ -32,10 +35,9 @@ def test_unknown_method_rejected(tmp_path):
         load_sources(p)
 
 
-def test_people_defaults_and_youtube_only_for_core():
+def test_people_defaults_itunes_only():
     ps = {p.name: p for p in load_people("people.yaml")}
-    assert ps["Jensen Huang"].order == ["itunes", "supadata"]
-    assert ps["Hock Tan"].order == ["itunes"]
+    assert ps["Jensen Huang"].order == ["itunes"] and ps["Hock Tan"].transcripts == ["podcast_transcript", "whisper"]
 
 
 def test_find_falls_back_in_order(monkeypatch):
@@ -46,34 +48,18 @@ def test_find_falls_back_in_order(monkeypatch):
         raise OSError
 
     monkeypatch.setitem(ingest.FINDERS, "rss", boom)
-    monkeypatch.setitem(ingest.FINDERS, "supadata", lambda *a: calls.append("supadata") or [ep(id="yt:v", youtube_id="v")])
-    src = Source("a", "A", 1, rss="x", youtube="https://www.youtube.com/@A/videos", fallback=["supadata", "ytdlp"],
-                 transcripts=["supadata"])
+    monkeypatch.setitem(ingest.FINDERS, "ytdlp", lambda *a: calls.append("ytdlp") or [ep(id="yt:v", youtube_id="v")])
+    src = Source("a", "A", 1, rss="x", youtube="https://www.youtube.com/@A/videos", fallback=["ytdlp"],
+                 transcripts=["youtube_captions"])
     eps, how = ingest.find(src, NOW, 7)
-    assert calls == ["rss", "supadata"] and how == "supadata" and eps[0].methods == ["supadata"]
+    assert calls == ["rss", "ytdlp"] and how == "ytdlp" and eps[0].methods == ["youtube_captions"]
 
 
-def test_supadata_skips_without_key(monkeypatch):
-    monkeypatch.delenv(supadata.ENV, raising=False)
-    with pytest.raises(LookupError):
-        ingest.from_supadata(Source("a", "A", 1, youtube="https://www.youtube.com/@A"), NOW, 7)
-    with pytest.raises(LookupError):
-        people.from_supadata_search(Person("A B", "r", "core"), NOW, 7)
-    assert transcribe.get_transcript(ep(youtube_id="v", methods=["supadata"])) == (None, None)
-
-
-def test_discover_people_reports_skipped_supadata(monkeypatch):
-    monkeypatch.delenv(supadata.ENV, raising=False)
-    monkeypatch.setitem(people.FINDERS, "itunes", lambda p, now, days: [])
-    _, meta = people.discover_people([Person("A B", "r", "core", fallback=["supadata"])], NOW, 7, [])
-    assert any(s.startswith("supadata") for s in meta["skipped_sources"])
-
-
-def test_supadata_parsing():
-    assert supadata.upload_filter(7) == "week" and supadata.upload_filter(1) == "today" and supadata.upload_filter(400) == "all"
-    segs = supadata.to_segments({"content": [{"text": " hi ", "offset": 61000}, {"text": ""}]})
-    assert segs == [{"start": 61.0, "speaker": None, "text": "hi"}]
-    assert supadata.to_segments({"content": "plain"}) is None
+def test_youtube_audio_skips_without_whisper(monkeypatch):
+    monkeypatch.setattr(whisper, "available", lambda: False)
+    assert whisper.transcribe_youtube("v", Budget(600)) == (None, 0.0)
+    cmd = whisper.ytdlp_audio_cmd("v", "/tmp/a.%(ext)s")
+    assert "bestaudio" in cmd and "--sleep-interval" in cmd and "--limit-rate" in cmd
 
 
 def test_transcript_method_order_and_budget(monkeypatch):
@@ -89,6 +75,7 @@ def test_transcript_method_order_and_budget(monkeypatch):
 
 
 def test_budget_and_segments_until():
+    assert Budget(600).take() == 36000
     b = Budget(50, 30)
     assert b.take() == 1800
     b.spend(1800)

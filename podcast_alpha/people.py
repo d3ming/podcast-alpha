@@ -12,8 +12,7 @@ from .ingest import Episode, _yt_json, canonical_id, in_window, parse_date
 from .config import check
 from .transcribe import title_match
 
-PEOPLE_DEFAULTS = {"preferred_source": "itunes", "fallback": ["supadata"], "transcripts": ["podcast_transcript", "whisper", "supadata"],
-                   "youtube_priority": ["core"]}
+PEOPLE_DEFAULTS = {"preferred_source": "itunes", "fallback": [], "transcripts": ["podcast_transcript", "whisper"]}
 
 CLIP = re.compile(r"#shorts|\bclips?\b|\breacts?\b|\breaction\b|\bhighlights?\b|\bexplained\b|\bAI voice\b", re.I)
 WINDOW = [(1, "EgQIAhAB"), (7, "EgQIAxAB"), (31, "EgQIBBAB"), (366, "EgQIBRAB")]
@@ -28,12 +27,10 @@ class Person:
     preferred_source: str = "itunes"
     fallback: list[str] = field(default_factory=list)
     transcripts: list[str] = field(default_factory=list)
-    youtube_priority: list[str] = field(default_factory=lambda: ["core"])
 
     @property
     def order(self) -> list[str]:
-        order = list(dict.fromkeys([self.preferred_source, *self.fallback]))
-        return [s for s in order if s == "itunes" or self.priority in self.youtube_priority]
+        return list(dict.fromkeys([self.preferred_source, *self.fallback]))
 
     @property
     def names(self) -> list[str]:
@@ -135,28 +132,7 @@ def dedupe(channel_eps: list[Episode], person_eps: list[Episode], threshold: flo
     return kept
 
 
-def from_supadata_search(person: Person, now: datetime, days: int, limit: int = 3, min_minutes: int = 20) -> list[Episode]:
-    from . import supadata
-
-    if not supadata.key():
-        raise LookupError(f"{supadata.ENV} not set")
-    rows = [{**r, "channel": (r.get("channel") or {}).get("name", "") if isinstance(r.get("channel"), dict) else r.get("channel", "")}
-            for r in supadata.search(f'"{person.name}"', days)]
-    out = []
-    for r in youtube_candidates(person, min_minutes, rows)[:limit * 2]:
-        info = supadata.video(r["id"])
-        dt = parse_date(info.get("uploadDate"))
-        if not dt or not in_window(dt, now, days):
-            continue
-        out.append(_ep(person, id=canonical_id(None, r["id"], None), show=(info.get("channel") or {}).get("name", r["channel"]),
-                       title=info.get("title", ""), url=f"https://www.youtube.com/watch?v={r['id']}", published_at=dt,
-                       youtube_id=r["id"], description=(info.get("description") or "")[:2000]))
-        if len(out) >= limit:
-            break
-    return out
-
-
-FINDERS = {"itunes": from_itunes, "supadata": from_supadata_search, "ytdlp": from_youtube_search}
+FINDERS = {"itunes": from_itunes, "ytdlp": from_youtube_search}
 
 
 def feed_transcripts(eps: list[Episode], parse=None) -> int:
@@ -202,4 +178,4 @@ def discover_people(people: list[Person], now: datetime, days: int, channel_eps:
         counts[e.via] = counts.get(e.via, 0) + 1
     tags = feed_transcripts(kept) if not only else 0
     return kept, {"per_source": counts, "candidates": len(found), "feed_transcript_tags": tags, "errors": errors,
-                  "skipped_sources": sorted(skipped) + ["podcast-index: needs API key and secret"]}
+                  "skipped_sources": sorted(skipped) + ["podcast-index: needs an API key"]}

@@ -55,3 +55,38 @@ def test_youtube_only_path_needs_no_feedparser_or_requests():
     code = ("import sys; sys.modules['feedparser'] = None; sys.modules['requests'] = None; "
             "from podcast_alpha.cli import main; from podcast_alpha import fetch, people, ingest")
     assert subprocess.run([sys.executable, "-c", code]).returncode == 0
+
+
+def test_transcribe_run_is_resumable(tmp_path, monkeypatch):
+    import podcast_alpha.whisper as w
+    from podcast_alpha.fetch import transcribe_run, write_episode
+
+    run = tmp_path / "run"
+    run.mkdir()
+    eps = [ep("rss:a", "A one", "odd-lots"), ep("rss:b", "B two", "odd-lots"), ep("rss:c", "C three", "odd-lots")]
+    eps[0].audio_url, eps[1].audio_url = "https://a.mp3", "https://b.mp3"
+    rows = [write_episode(run, e, None, None) for e in eps]
+    (run / "manifest.json").write_text(json.dumps({"episodes": rows}))
+    db = tmp_path / "db.sqlite"
+    for e in eps:
+        Store(db).add_episode(e, None)
+    calls = []
+
+    def fake(url, budget):
+        calls.append(url)
+        if url.startswith("https://b"):
+            raise OSError
+        budget.spend(120)
+        return SEGS, 120
+
+    monkeypatch.setattr(w, "transcribe", fake)
+    transcribe_run(SimpleNamespace(run=str(run), minutes=600, per_episode=None, db=str(db), force=False))
+    m = json.loads((run / "manifest.json").read_text())
+    a, b, c = m["episodes"]
+    assert a["has_transcript"] and a["transcript_source"] == "whisper (2 min)" and b["whisper_error"] == "OSError"
+    assert not c["has_transcript"] and m["whisper_minutes"] == 2.0 and not (run / "transcribe.lock").exists()
+    md = (run / a["file"]).read_text()
+    assert "transcript_source: whisper (2 min)" in md and "[0:10:00] bye" in md and "_No transcript" not in md
+    assert Store(db).db.execute("SELECT transcript_source FROM episodes WHERE id='rss:a'").fetchone()[0] == "whisper (2 min)"
+    transcribe_run(SimpleNamespace(run=str(run), minutes=600, per_episode=None, db=None, force=False))
+    assert calls == ["https://a.mp3", "https://b.mp3"]
