@@ -32,3 +32,24 @@ people:
   - {name: Michael Intrator, role: CoreWeave CEO, priority: watch}
   - {name: Larry Ellison, role: Oracle chairman and CTO, priority: core}
   - {name: Clay Magouyrk, role: Oracle co-CEO, priority: watch}
+  - {name: Brad Gerstner, role: Altimeter Capital, priority: core, aliases: [Brad G]}
+  - {name: Marc Andreessen, role: a16z, priority: core}
+  - {name: Gavin Baker, role: Atreides Management, priority: core}
+  - {name: Ben Horowitz, role: a16z, priority: core}
+  - {name: Chamath Palihapitiya, role: Social Capital, priority: core}
+  - {name: David Sacks, role: Craft Ventures, priority: core}
+  - {name: Bill Gurley, role: Benchmark, priority: core}
+  - {name: Patrick O'Shaughnessy, role: Positive Sum, priority: core}
+  - {name: Elad Gil, role: Independent investor, priority: core}
+  - {name: Philippe Laffont, role: Coatue, priority: core}
+  - {name: Chase Coleman, role: Tiger Global, priority: watch}
+  - {name: Cathie Wood, role: ARK Invest, priority: watch}
+  - {name: Stan Druckenmiller, role: Duquesne Family Office, priority: watch, aliases: [Stanley Druckenmiller]}
+  - {name: Masayoshi Son, role: SoftBank, priority: watch}
+  - {name: Vinod Khosla, role: Khosla Ventures, priority: watch}
+  - {name: Reid Hoffman, role: Greylock, priority: watch}
+  - {name: Peter Thiel, role: Founders Fund, priority: watch}
+  - {name: Sarah Guo, role: Conviction, priority: watch}
+  - {name: Josh Kushner, role: Thrive Capital, priority: watch}
+  - {name: David George, role: a16z, priority: watch}
+  - {name: Dan Loeb, role: Third Point, priority: watch}
