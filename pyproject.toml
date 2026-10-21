@@ -1,0 +1,15 @@
+[project]
+name = "podcast-alpha"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = ["feedparser>=6", "youtube-transcript-api>=1.0", "yt-dlp", "pyyaml", "requests"]
+
+[project.optional-dependencies]
+whisper = ["faster-whisper"]
+dev = ["pytest"]
+
+[project.scripts]
+podcast-alpha = "podcast_alpha.cli:main"
+
+[tool.setuptools]
+packages = ["podcast_alpha"]
