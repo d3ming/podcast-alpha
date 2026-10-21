@@ -1,101 +1,52 @@
 import argparse
-import json
-from datetime import datetime, timezone
+import os
+import sys
 from pathlib import Path
 
-from . import holdings as H
-from . import llm, notion
-from .config import load_sources
-from .digest import render, week_of
-from .extract import extract
-from .ingest import discover
-from .score import episode_components, episode_raw, reason, score_claims, score_episodes
-from .store import Store
-from .transcribe import get_transcript
+from . import notion, ranked
+from .digest import render
+from .fetch import fetch
+
+ROOT = Path(__file__).resolve().parent.parent
 
 
-def run(args) -> Path:
-    now = datetime.now(timezone.utc)
-    sources, t3_cap = load_sources(args.sources)
-    if args.only:
-        sources = [s for s in sources if s.id in args.only.split(",")]
-    store = Store(args.db)
-    p = llm.available_provider()
-    print(f"[llm] {'using ' + p[1] + ' (key from ' + p[0] + ')' if p else 'no provider key found; heuristic extractor'}")
-
-    episodes = discover(sources, now, args.days, t3_cap, per_source=args.per_source)
-    rows, batch = [], []
-    for ep in episodes:
-        if store.seen(ep.id) and not args.rescore:
-            print(f"[dedupe] skip {ep.id}")
-            continue
-        segs, tsrc = get_transcript(ep)
-        claims, extractor = ([], "none")
-        if segs:
-            claims, extractor = extract(segs, ep.title, store.recent_claims(exclude_episode=ep.id))
-        minutes = (segs[-1]["start"] / 60) if segs else 0
-        print(f"[episode] {ep.source_id}: transcript={tsrc or 'none'} claims={len(claims)}")
-        rows.append({"ep": ep, "claims": claims, "segs": bool(segs), "minutes": minutes,
-                     "transcript_source": tsrc, "extractor": extractor})
-        batch += [(c, ep.tier) for c in claims]
-    score_claims(batch)
-
-    weights = {} if args.no_holdings else H.fetch_weights()
-    out = []
-    for r in rows:
-        ep, claims = r["ep"], sorted(r["claims"], key=lambda c: c["score"], reverse=True)
-        comp = episode_components(ep, claims, r["minutes"]) if r["segs"] else {
-            "tier": {1: 10.0, 2: 6.0, 3: 3.0}[ep.tier], "novelty": 0, "verifiability": 0,
-            "specificity": 0, "speaker_access": 0}
-        raw = episode_raw(comp)
-        if weights:
-            raw = H.relevance(raw, [t for c in claims for t in c["ticker"]], weights)
-        out.append({"title": ep.title, "url": ep.url, "source": ep.source_name, "tier": ep.tier,
-                    "published": ep.published_at.isoformat(), "youtube_id": ep.youtube_id,
-                    "transcript_source": r["transcript_source"], "claims": claims, "raw": raw,
-                    "reason": reason(comp, len(claims), r["segs"]), "id": ep.id})
-    score_episodes(out)
-    out.sort(key=lambda e: (e["score"], e["raw"]), reverse=True)
-
-    meta = {"week_of": week_of(now, args.days), "days": args.days, "run_at": now.strftime("%Y-%m-%d %H:%M UTC"),
-            "extractor": f"LLM ({p[1]})" if p else "heuristic (no LLM key set)",
-            "holdings": "off" if args.no_holdings or not weights else "on (weights used for ordering only, not shown)"}
-    md = render(out, meta, top_claims=args.top_claims)
-    path = Path(args.out) / f"digest-{meta['week_of']}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(md)
-    if args.json:
-        safe = [{k: v for k, v in e.items() if k != "raw"} for e in out]
-        path.with_suffix(".json").write_text(json.dumps(safe, indent=2))
-    for r in rows:
-        store.add_episode(r["ep"], r["transcript_source"])
-        store.add_claims(r["ep"].id, r["claims"])
-    print(f"[digest] {path}")
-    if args.notion:
-        title = f"Podcast alpha · Week of {meta['week_of']} ranking (MVP)"
+def publish(args) -> None:
+    try:
+        data = ranked.load(args.ranked)
+        warnings = ranked.validate(data)
+    except ranked.RankedError as exc:
+        sys.exit(f"[publish] invalid: {exc}")
+    for w in warnings:
+        print(f"[publish] warning: {w}")
+    md = render(data, top_claims=args.top_claims)
+    out = Path(args.out or Path(args.ranked).with_name(f"digest-{data['week_of']}.md"))
+    out.write_text(md)
+    print(f"[publish] {out}")
+    if os.environ.get("NOTION_TOKEN") and (args.notion_parent or os.environ.get("NOTION_PARENT_PAGE_ID")):
+        title = f"Podcast alpha · Week of {data['week_of']} ranking (MVP)"
         print(f"[notion] {notion.publish(md, title, args.notion_parent)}")
-    return path
+    else:
+        print("[notion] no NOTION_TOKEN; publish the markdown with the Notion connector")
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="podcast-alpha")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    r = sub.add_parser("run", help="ingest, transcribe, extract, score, write the digest")
-    r.add_argument("--days", type=int, default=7)
-    r.add_argument("--sources", default="sources.yaml")
-    r.add_argument("--db", default="data/podcast_alpha.sqlite")
-    r.add_argument("--out", default="out")
-    r.add_argument("--only", help="comma-separated source ids")
-    r.add_argument("--per-source", type=int, default=3)
-    r.add_argument("--top-claims", type=int, default=3)
-    r.add_argument("--no-holdings", action="store_true", help="skip holdings weighting")
-    r.add_argument("--rescore", action="store_true", help="re-process episodes already in the DB")
-    r.add_argument("--json", action="store_true", help="also write a JSON copy of the digest")
-    r.add_argument("--notion", action="store_true", help="publish the digest to Notion")
-    r.add_argument("--notion-parent", help="Notion parent page id")
+    f = sub.add_parser("fetch", help="ingest episodes and write transcripts plus manifest.json to a run folder")
+    f.add_argument("--days", type=int, default=7)
+    f.add_argument("--sources", default=str(ROOT / "sources.yaml"))
+    f.add_argument("--db", default=str(ROOT / "data" / "podcast_alpha.sqlite"))
+    f.add_argument("--runs", default=str(ROOT / "runs"))
+    f.add_argument("--only", help="comma-separated source ids")
+    f.add_argument("--per-source", type=int, default=3)
+    f.add_argument("--refetch", action="store_true", help="include episodes already in the dedupe DB")
+    p = sub.add_parser("publish", help="validate ranked.json and render the digest")
+    p.add_argument("ranked")
+    p.add_argument("--out")
+    p.add_argument("--top-claims", type=int, default=3)
+    p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
-    if args.cmd == "run":
-        run(args)
+    fetch(args) if args.cmd == "fetch" else publish(args)
 
 
 if __name__ == "__main__":

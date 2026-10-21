@@ -1,48 +1,36 @@
-from datetime import datetime
-
 from .transcribe import fmt_ts
 
 
-def ts_link(ep: dict, seconds: int) -> str:
-    url = ep["url"]
-    if ep.get("youtube_id"):
-        url = f"https://www.youtube.com/watch?v={ep['youtube_id']}&t={int(seconds)}s"
-    return f"[{fmt_ts(seconds)}]({url})"
+def ts_link(url: str, seconds: int) -> str:
+    if "youtube.com/watch" in url:
+        return f"[{fmt_ts(seconds)}]({url}&t={int(seconds)}s)"
+    return fmt_ts(seconds)
 
 
-def render(episodes: list[dict], meta: dict, top_claims: int = 3) -> str:
+def render(data: dict, top_claims: int = 3) -> str:
+    eps = data["episodes"]
     lines = [
-        f"# Podcast alpha · Week of {meta['week_of']} ranking (MVP)",
+        f"# Podcast alpha · Week of {data['week_of']} ranking (MVP)",
         "",
-        f"Window: last {meta['days']} days to {meta['run_at']}. Episodes: {len(episodes)}. "
-        f"Extraction: {meta['extractor']}. Holdings weighting: {meta['holdings']}.",
-        "Scores are 1-10 with a forced spread across this batch (top 10% at 8+, median near 5, 30% at 4 or less). "
-        "Claims are unverified.",
-        "",
-        "| # | Score | Episode | Source | Published | Why |",
-        "|---|---|---|---|---|---|",
+        f"Ranked by {data['ranked_by']} from `{data['run_dir']}`. Episodes: {len(eps)}. Claims are unverified.",
     ]
-    for i, ep in enumerate(episodes, 1):
-        title = ep["title"].replace("|", "/")
-        lines.append(f"| {i} | {ep['score']} | [{title}]({ep['url']}) | {ep['source']} (T{ep['tier']}) | "
-                     f"{ep['published'][:10]} | {ep['reason']} |")
+    if data.get("notes"):
+        lines += ["", data["notes"]]
+    lines += ["", "| # | Score | Episode | Source | Published | Why |", "|---|---|---|---|---|---|"]
+    for e in eps:
+        title = e["title"].replace("|", "/")
+        lines.append(f"| {e['rank']} | {e['score']} | [{title}]({e['url']}) | {e['source']} (T{e['tier']}) | "
+                     f"{e['published'][:10]} | {e['reason'].replace('|', '/')} |")
     lines.append("")
-    for i, ep in enumerate(episodes, 1):
-        lines += [f"## {i}. {ep['title']} · {ep['score']}/10", "",
-                  f"{ep['source']} · {ep['published'][:10]} · transcript: {ep['transcript_source'] or 'none'}", "",
-                  ep["reason"], ""]
-        claims = ep["claims"][:top_claims]
-        if not claims:
-            lines += ["_No claims extracted._", ""]
+    for e in eps:
+        lines += [f"## {e['rank']}. {e['title']} · {e['score']}/10", "",
+                  f"{e['source']} (T{e['tier']}) · {e['published'][:10]}", "", e["reason"], ""]
+        if not e["claims"]:
+            lines += ["_No claims._", ""]
             continue
-        for c in claims:
+        for c in e["claims"][:top_claims]:
             tick = ", ".join(c["ticker"]) or "-"
-            lines.append(f"- **{c['score']}/10** `{tick}` {c['claim']} ({c['speaker']}, {ts_link(ep, c['timestamp'])}; "
+            lines.append(f"- `{tick}` {c['claim']} ({c['speaker']}, {ts_link(e['url'], c['timestamp'])}; "
                          f"novelty {c['novelty']}/3, verifiable {c['verifiable']}/3)")
         lines.append("")
     return "\n".join(lines)
-
-
-def week_of(now: datetime, days: int) -> str:
-    from datetime import timedelta
-    return (now - timedelta(days=days)).strftime("%Y-%m-%d")

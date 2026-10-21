@@ -1,11 +1,13 @@
 # podcast-alpha
 
-MVP of the podcast alpha pipeline: ingest a tiered list of investing podcasts, get transcripts, extract
-ticker-linked claims, score claims and episodes with a forced spread, and write a weekly ranking digest
-(markdown, optionally a Notion page).
+Weekly podcast alpha pipeline. Code does the deterministic work (fetch, transcripts, dedupe, validate, render).
+A Grok Bot does the judgment (claims, scores, ranking) by following [`prompts/rank.md`](prompts/rank.md).
+There are no LLM API keys or calls in this repo.
 
 ```
-podcast-alpha run --days 7
+podcast-alpha fetch --days 7          # code: write runs/<date>/ with transcripts and manifest.json
+# bot: read the run folder, follow prompts/rank.md, write runs/<date>/ranked.json
+podcast-alpha publish runs/<date>/ranked.json   # code: validate, render digest markdown, optional Notion
 ```
 
 ## Setup
@@ -13,50 +15,43 @@ podcast-alpha run --days 7
 ```
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e '.[dev]'
-podcast-alpha run --days 7 --no-holdings     # writes out/digest-<week>.md
 pytest -q
 ```
 
-Optional environment variables (names only; nothing is read from files):
+## fetch
 
-| Variable | Effect |
-|---|---|
-| `XAI_API_KEY` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | Use that LLM for claim extraction. Without one, a heuristic extractor runs. |
-| `PODCAST_ALPHA_MODEL` | Override the model name. |
-| `NOTION_TOKEN`, `NOTION_PARENT_PAGE_ID` | Needed by `--notion`, which publishes the digest as a child page. |
+`podcast-alpha fetch --days 7 [--only odd-lots,bg2] [--per-source 3] [--refetch]`
 
-## Pipeline
+- Sources come from [`sources.yaml`](sources.yaml): 9 sources in tiers 1-3 (tier 3 capped at 2 episodes).
+- RSS via feedparser and YouTube via yt-dlp. Dates are the publisher's feed date or the video's upload time.
+- Transcripts, in order: the feed's `podcast:transcript` tag, YouTube captions, then a YouTube copy of an
+  audio-only episode found by title match. faster-whisper is a stub.
+- Dedupe: SQLite (`data/podcast_alpha.sqlite`) keyed by episode id (RSS guid, else YouTube id). Seen episodes
+  are skipped and listed under `skipped_seen`; `--refetch` includes them again.
+- Output in `runs/<YYYY-MM-DD>/` (git-ignored):
+  - one `.md` per episode: YAML front matter (`episode_id`, `title`, `source`, `source_id`, `tier`, `published`,
+    `url`, `youtube_id`, `transcript_source`), the description, then the transcript as `[h:mm:ss] Speaker: text`.
+  - `manifest.json`: every episode, including those without a transcript (`has_transcript: false`).
 
-1. **Sources** (`sources.yaml`): 9 sources in tiers T1 to T3. T3 is capped at 2 episodes per run.
-2. **Ingest** (`ingest.py`): RSS via feedparser and YouTube via yt-dlp. Dates come from the publisher feed or the
-   video's upload time. Episode ids are the RSS guid, else the YouTube id.
-3. **Dedupe** (`store.py`): SQLite `episodes` table keyed by episode id; `claims` table feeds novelty (last 90 days).
-   Use `--rescore` to reprocess.
-4. **Transcripts** (`transcribe.py`): `podcast:transcript` tag, then YouTube captions, then a YouTube mirror found
-   by title match for audio-only feeds. faster-whisper is a stub.
-5. **Extraction** (`extract.py`): one JSON record per claim: `ticker, claim, speaker, timestamp, novelty (0-3),
-   verifiable (0-3)`. LLM if a key is set, otherwise heuristic (sentences with a known company or cashtag plus a
-   number, forecast or financial term).
-6. **Scoring** (`score.py`): claims and episodes are scored 1-10 against anchors (9-10 new primary info, checkable,
-   material; 5-6 solid recap; 3 or lower hype). Ranks are then forced to a spread: top 10% at 8+, median near 5,
-   30% at 4 or less. Episode raw score weights: tier 20%, novelty 25%, verifiability 20%, specificity 20%,
-   speaker access 15%.
-7. **Holdings** (`holdings.py`): fetches the folio JSON at run time and multiplies relevance by `1 + weight` for
-   episodes with claims on a held ticker. Weights stay in memory and are never logged or written. `--no-holdings`
-   turns it off.
-8. **Output** (`digest.py`, `notion.py`): markdown ranking with score, one-line reason and top claims with
-   timestamp links. `--notion` publishes it.
+## rank (bot)
+
+The bot follows [`prompts/rank.md`](prompts/rank.md): claim fields, 1-10 scores with anchors and a forced spread,
+tier rules (tier 3 at most 2 episodes and never in ranks 1-3), a one-line reason and up to 5 top claims per episode.
+Output format: [`schema/ranked.schema.json`](schema/ranked.schema.json).
+
+## publish
+
+`podcast-alpha publish runs/<date>/ranked.json [--out file.md] [--notion-parent <page id>]`
+
+- Validates against the schema and the tier rules, and rejects anything that looks like holdings data.
+  A clustered score spread prints a warning.
+- Writes `digest-<week_of>.md` next to the ranked file.
+- If `NOTION_TOKEN` and a parent page id (`--notion-parent` or `NOTION_PARENT_PAGE_ID`) are set, it also creates the
+  Notion page through the API. Otherwise Cain publishes the markdown with the Notion connector.
+
+## Holdings
+
+`podcast_alpha/holdings.py` can fetch the folio JSON at run time so a bot can weigh relevance privately.
+Holdings and weights never go into the repo, `ranked.json`, the digest or Notion; publish rejects them.
 
 Out of scope for v0.1: claim verification against filings, speaker diarization, scheduling.
-
-## Sample
-
-[`samples/digest-2026-10-14.md`](samples/digest-2026-10-14.md) is a real run from 2026-10-21 with
-`--no-holdings` and the heuristic extractor (no LLM key on the build box). It contains no holdings data.
-
-## Known limits
-
-- The heuristic extractor is a placeholder for the LLM step. It misses claims stated without numbers or known
-  company names, and speakers are "unknown" unless the transcript labels them.
-- YouTube captions can be rate-limited; the fetch retries 3 times then records no transcript.
-- Claims are unverified.

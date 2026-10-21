@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/d3ming/podcast-alpha/schema/ranked.schema.json",
+  "title": "Podcast alpha weekly ranking",
+  "description": "Output a Grok Bot writes after following prompts/rank.md over a fetch run folder. Holdings or weights must never appear here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["week_of", "run_dir", "ranked_by", "episodes"],
+  "properties": {
+    "week_of": {"type": "string", "format": "date", "description": "First day of the window, YYYY-MM-DD."},
+    "run_dir": {"type": "string", "description": "Fetch run folder the ranking was built from."},
+    "ranked_by": {"type": "string", "description": "Bot that did the analysis, e.g. Cain."},
+    "notes": {"type": "string", "description": "Optional caveats for the reader (coverage gaps, missing transcripts)."},
+    "episodes": {
+      "type": "array",
+      "description": "Every episode in the manifest, best first. Episodes without a transcript stay in, scored on what is known.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "episode_id", "title", "url", "source", "tier", "published", "score", "reason", "claims"],
+        "properties": {
+          "rank": {"type": "integer", "minimum": 1},
+          "episode_id": {"type": "string", "description": "Same id as the manifest."},
+          "title": {"type": "string"},
+          "url": {"type": "string"},
+          "source": {"type": "string"},
+          "tier": {"type": "integer", "enum": [1, 2, 3]},
+          "published": {"type": "string", "description": "Publisher date, YYYY-MM-DD or ISO 8601."},
+          "score": {"type": "integer", "minimum": 1, "maximum": 10},
+          "reason": {"type": "string", "maxLength": 240, "description": "One line on why it earned this score."},
+          "claims": {
+            "type": "array",
+            "maxItems": 5,
+            "description": "Top claims, best first. Empty when there is no transcript.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["ticker", "claim", "speaker", "timestamp", "novelty", "verifiable"],
+              "properties": {
+                "ticker": {"type": "array", "items": {"type": "string"}, "description": "Tickers the claim is about; private companies as private:Name."},
+                "claim": {"type": "string", "description": "One falsifiable sentence."},
+                "speaker": {"type": "string", "description": "Name, or role if unnamed, or unknown."},
+                "timestamp": {"type": "integer", "minimum": 0, "description": "Seconds from the start of the episode."},
+                "novelty": {"type": "integer", "minimum": 0, "maximum": 3},
+                "verifiable": {"type": "integer", "minimum": 0, "maximum": 3}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
