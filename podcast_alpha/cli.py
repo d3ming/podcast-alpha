@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
 
-from .fetch import fetch, merge, transcribe_run
+from .fetch import daily, fetch, merge, transcribe_run
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -32,11 +33,40 @@ def publish(args) -> None:
         print("[notion] no NOTION_TOKEN; publish the markdown with the Notion connector")
 
 
-def main(argv=None):
-    ap = argparse.ArgumentParser(prog="podcast-alpha")
-    sub = ap.add_subparsers(dest="cmd", required=True)
-    f = sub.add_parser("fetch", help="ingest episodes and write transcripts plus manifest.json to a run folder")
-    f.add_argument("--days", type=int, default=7)
+def check(args) -> None:
+    from . import ranked, report
+
+    try:
+        report.validate(json.loads(Path(args.file).read_text()), args.kind)
+    except ranked.RankedError as exc:
+        sys.exit(f"[check] invalid: {exc}")
+    print(f"[check] {args.file} ok")
+
+
+def render_report(args) -> None:
+    from . import notion, ranked, report
+
+    try:
+        data = report.validate(json.loads(Path(args.report).read_text()), "report")
+    except ranked.RankedError as exc:
+        sys.exit(f"[report] invalid: {exc}")
+    out = Path(args.out or Path(args.report).with_name("report.md"))
+    out.write_text(report.render(data))
+    print(f"[report] {out}")
+    if os.environ.get("NOTION_TOKEN") and (args.notion_parent or notion.parent()):
+        print(f"[notion] {notion.publish(out.read_text(), data['title'], args.notion_parent)}")
+    else:
+        print("[notion] no NOTION_TOKEN or parent; publish report.md with the Notion connector")
+
+
+def tmtb_import(args) -> None:
+    from .tmtb import run
+
+    text = sys.stdin.read() if args.email == "-" else Path(args.email).read_text()
+    run(text, Path(args.run), days=args.days)
+
+
+def add_fetch_args(f) -> None:
     f.add_argument("--sources", default=str(ROOT / "sources.yaml"))
     f.add_argument("--db", default=str(ROOT / "data" / "podcast_alpha.sqlite"))
     f.add_argument("--runs", default=str(ROOT / "runs"))
@@ -47,6 +77,15 @@ def main(argv=None):
     f.add_argument("--run-name", help="run folder name (default: today's date)")
     f.add_argument("--whisper-minutes", type=float, help="whisper minutes inside fetch (default 0 on the box, 600 with --youtube-only)")
     f.add_argument("--whisper-per-episode", type=float, help="cap per episode in minutes (default: whole episode)")
+    f.add_argument("--refetch", action="store_true", help="include episodes already in the dedupe DB")
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="podcast-alpha")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    f = sub.add_parser("fetch", help="ingest episodes and write transcripts plus manifest.json to a run folder")
+    f.add_argument("--days", type=int, default=7)
+    add_fetch_args(f)
     f.add_argument("--youtube-only", action="store_true", help="YouTube channels and person search only, written to --out")
     f.add_argument("--out", default="pa-yt-out", help="output dir for --youtube-only")
     t = sub.add_parser("transcribe", help="whisper untranscribed episodes in a run folder; resumable, run it detached")
@@ -59,14 +98,30 @@ def main(argv=None):
     m.add_argument("dir")
     m.add_argument("--into", required=True)
     m.add_argument("--db", default=str(ROOT / "data" / "podcast_alpha.sqlite"))
-    f.add_argument("--refetch", action="store_true", help="include episodes already in the dedupe DB")
+    d = sub.add_parser("daily", help="people first, then channels, for the last --hours; queues transcribe in the background")
+    add_fetch_args(d)
+    d.add_argument("--hours", type=float, default=48)
+    d.add_argument("--minutes", type=float, default=600, help="whisper budget for the queued transcribe")
+    d.add_argument("--no-transcribe", action="store_true")
+    c = sub.add_parser("check", help="validate selected.json or report.json")
+    c.add_argument("kind", choices=["selected", "report"])
+    c.add_argument("file")
+    r = sub.add_parser("report", help="validate report.json, render report.md, publish to Notion if configured")
+    r.add_argument("report")
+    r.add_argument("--out")
+    r.add_argument("--notion-parent")
+    ti = sub.add_parser("tmtb-import", help="parse a pasted reference email into seeds and list what the run missed")
+    ti.add_argument("email", help="path to the email body, or - for stdin")
+    ti.add_argument("--run", required=True)
+    ti.add_argument("--days", type=float, default=4)
     p = sub.add_parser("publish", help="validate ranked.json and render the digest")
     p.add_argument("ranked")
     p.add_argument("--out")
     p.add_argument("--top-claims", type=int, default=3)
     p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
-    {"fetch": fetch, "merge": merge, "transcribe": transcribe_run, "publish": publish}[args.cmd](args)
+    {"fetch": fetch, "daily": daily, "merge": merge, "transcribe": transcribe_run, "publish": publish, "check": check,
+     "report": render_report, "tmtb-import": tmtb_import}[args.cmd](args)
 
 
 if __name__ == "__main__":

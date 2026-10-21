@@ -3,10 +3,13 @@ from __future__ import annotations
 """Publishes the digest as a Notion page through the public API (NOTION_TOKEN + NOTION_PARENT_PAGE_ID)."""
 import os
 import re
+from pathlib import Path
 
 import requests
 
 API = "https://api.notion.com/v1"
+NUMBERED = re.compile(r"^\d+\. ")
+CONFIG = Path(__file__).resolve().parent.parent / "publish.yaml"
 INLINE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`")
 
 
@@ -55,6 +58,12 @@ def md_to_blocks(md: str) -> list[dict]:
             continue
         if line.startswith("## "):
             blocks.append(_block("heading_2", line[3:]))
+        elif line.startswith("### "):
+            blocks.append(_block("heading_3", line[4:]))
+        elif line.strip() == "---":
+            blocks.append({"object": "block", "type": "divider", "divider": {}})
+        elif NUMBERED.match(line):
+            blocks.append(_block("numbered_list_item", NUMBERED.sub("", line, count=1)))
         elif line.startswith("- "):
             blocks.append(_block("bulleted_list_item", line[2:]))
         else:
@@ -63,9 +72,19 @@ def md_to_blocks(md: str) -> list[dict]:
     return blocks
 
 
+def parent() -> str | None:
+    if os.environ.get("NOTION_PARENT_PAGE_ID"):
+        return os.environ["NOTION_PARENT_PAGE_ID"]
+    if CONFIG.exists():
+        import yaml
+
+        return (yaml.safe_load(CONFIG.read_text()) or {}).get("notion_parent_page_id") or None
+    return None
+
+
 def publish(md: str, title: str, parent_id: str | None = None) -> str:
     token = os.environ.get("NOTION_TOKEN")
-    parent_id = parent_id or os.environ.get("NOTION_PARENT_PAGE_ID")
+    parent_id = parent_id or parent()
     if not token or not parent_id:
         raise RuntimeError("--notion needs NOTION_TOKEN and NOTION_PARENT_PAGE_ID (or --notion-parent)")
     h = {"Authorization": f"Bearer {token}", "Notion-Version": "2022-06-28"}

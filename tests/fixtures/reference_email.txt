@@ -1,0 +1,13 @@
+Daily Podcast Brief: Example edition
+
+Today's Essential Episodes:
+
+1. Acme Robotics CEO Jane Placeholder on Factory Automation Demand and Pricing Power The Widget Show, with Host Person and Jane Placeholder, CEO of Acme Robotics
+2. Zed Capital's Omar Example on Rate Cuts and Software Multiples Market Hour, with Ann Anchor, Bob Anchor and Omar Example, founder of Zed Capital
+3. Nadia Sample and Leo Test on Chip Supply Chains Supply Lines, with Nadia Sample of Sample Research and Leo Test of Test Labs
+
+Disclaimer: synthetic fixture for tests.
+
+THE SIGNAL
+
+- 1. Not an episode line.

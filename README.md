@@ -10,6 +10,8 @@ podcast-alpha fetch --days 7          # code: write runs/<date>/ with transcript
 podcast-alpha publish runs/<date>/ranked.json   # code: validate, render digest markdown, optional Notion
 ```
 
+For the daily loop (`daily`, `transcribe`, `tmtb-import`, select, report) see [AGENTS.md](AGENTS.md).
+
 ## Setup
 
 ```

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "selected.json: must-watch picks for one daily run",
+  "type": "object",
+  "required": ["date", "run_dir", "selected_by", "episodes"],
+  "additionalProperties": false,
+  "properties": {
+    "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "run_dir": {"type": "string"},
+    "selected_by": {"type": "string"},
+    "episodes": {
+      "type": "array", "minItems": 5, "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["episode_id", "title", "show", "url", "guests", "kind", "why"],
+        "additionalProperties": false,
+        "properties": {
+          "episode_id": {"type": "string"},
+          "title": {"type": "string"},
+          "show": {"type": "string"},
+          "url": {"type": "string"},
+          "guests": {"type": "array", "items": {"type": "object", "required": ["name"], "additionalProperties": false,
+                     "properties": {"name": {"type": "string"}, "role": {"type": "string"}}}},
+          "kind": {"enum": ["exec", "investor", "analyst", "other"]},
+          "has_transcript": {"type": "boolean"},
+          "why": {"type": "string", "maxLength": 300}
+        }
+      }
+    }
+  }
+}

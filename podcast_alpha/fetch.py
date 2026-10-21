@@ -134,13 +134,17 @@ def fetch(args) -> Path:
     run_dir = Path(args.runs) / (args.run_name or now.strftime("%Y-%m-%d"))
     run_dir.mkdir(parents=True, exist_ok=True)
     manifest = {"run_at": now.isoformat(timespec="seconds"), "days": args.days, "episodes": [], "skipped_seen": []}
-    eps = discover(sources, now, args.days, t3_cap, per_source=args.per_source)
     known = store.known_since(now - timedelta(days=args.days + 7))
+    people_first = getattr(args, "people_first", False)
+    person_eps, eps = [], [] if people_first else discover(sources, now, args.days, t3_cap, per_source=args.per_source)
     if args.people:
         person_eps, manifest["people"] = discover_people(load_people(args.people), now, args.days, eps + known, args.per_person)
-        eps += person_eps
+    if people_first:
+        eps = [e for e in discover(sources, now, args.days, t3_cap, per_source=args.per_source)
+               if not any(p.id == e.id or title_match(p.title, e.title) >= 0.8 for p in person_eps)]
+    eps += person_eps
     budget = Budget(args.whisper_minutes or 0, args.whisper_per_episode)
-    eps.sort(key=lambda e: (e.source_id.startswith("person:"), e.tier, -e.published_at.timestamp()))
+    eps.sort(key=lambda e: (e.source_id.startswith("person:") != people_first, e.tier, -e.published_at.timestamp()))
     for ep in eps:
         dup = not args.refetch and (store.seen(ep.id) or any(k.id != ep.id and title_match(k.title, ep.title) >= 0.8 for k in known))
         if dup:
@@ -158,7 +162,6 @@ def fetch(args) -> Path:
 
 def transcribe_run(args) -> Path:
     from .store import Store
-    from .transcribe import from_rss_tag
     from .whisper import transcribe
 
     run_dir = Path(args.run)
@@ -209,3 +212,27 @@ def with_transcript(md: str, segs: list[dict], tsrc: str) -> str:
     head = re.sub(r"^transcript_source: .*$", f"transcript_source: {tsrc}", head, count=1, flags=re.M)
     lines = [f"[{fmt_ts(s['start'])}] {s['speaker'] + ': ' if s.get('speaker') else ''}{s['text']}" for s in segs]
     return head + "## Transcript\n\n" + "\n".join(lines) + "\n"
+
+
+def queue_transcribe(run_dir: Path, minutes: float, db: str | None) -> int:
+    import subprocess
+    import sys
+
+    cmd = [sys.executable, "-m", "podcast_alpha.cli", "transcribe", str(run_dir), "--minutes", str(minutes)]
+    if db:
+        cmd += ["--db", db]
+    with open(run_dir / "transcribe.log", "a") as log_file:
+        proc = subprocess.Popen(cmd, stdout=log_file, stderr=subprocess.STDOUT, start_new_session=True,
+                                cwd=Path(__file__).resolve().parent.parent)
+    return proc.pid
+
+
+def daily(args) -> Path:
+    args.days, args.people_first, args.youtube_only = args.hours / 24, True, False
+    run_dir = fetch(args)
+    if args.no_transcribe:
+        print(f"[daily] transcribe later: podcast-alpha transcribe {run_dir}")
+    else:
+        pid = queue_transcribe(run_dir, args.minutes, args.db)
+        print(f"[daily] transcribe queued pid={pid} log={run_dir / 'transcribe.log'}")
+    return run_dir
