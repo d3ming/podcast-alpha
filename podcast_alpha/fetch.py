@@ -7,6 +7,7 @@ import yaml
 
 from .config import load_sources
 from .ingest import discover
+from .people import discover_people, load_people
 from .store import Store
 from .transcribe import fmt_ts, get_transcript
 
@@ -37,20 +38,25 @@ def fetch(args) -> Path:
     if args.only:
         sources = [s for s in sources if s.id in args.only.split(",")]
     store = Store(args.db)
-    run_dir = Path(args.runs) / now.strftime("%Y-%m-%d")
+    run_dir = Path(args.runs) / (args.run_name or now.strftime("%Y-%m-%d"))
     run_dir.mkdir(parents=True, exist_ok=True)
     manifest = {"run_at": now.isoformat(timespec="seconds"), "days": args.days, "episodes": [], "skipped_seen": []}
-    for ep in discover(sources, now, args.days, t3_cap, per_source=args.per_source):
+    eps = discover(sources, now, args.days, t3_cap, per_source=args.per_source)
+    if args.people:
+        person_eps, manifest["people"] = discover_people(load_people(args.people), now, args.days, eps, args.per_person)
+        eps += person_eps
+    for ep in eps:
         if store.seen(ep.id) and not args.refetch:
             manifest["skipped_seen"].append(ep.id)
             print(f"[dedupe] skip {ep.id}")
             continue
         segs, tsrc = get_transcript(ep)
-        name = f"{ep.published_at.date()}-{ep.source_id}-{slug(ep.title)}.md"
+        name = f"{ep.published_at.date()}-{slug(ep.source_id, 40)}-{slug(ep.title)}.md"
         (run_dir / name).write_text(episode_md(ep, segs, tsrc))
         store.add_episode(ep, tsrc)
         manifest["episodes"].append({
-            "episode_id": ep.id, "file": name, "title": ep.title, "source": ep.source_name, "tier": ep.tier,
+            "episode_id": ep.id, "file": name, "title": ep.title, "source": ep.source_name, "source_tag": ep.source_id,
+            "via": ep.via or "channel", "tier": ep.tier,
             "published": ep.published_at.date().isoformat(), "url": ep.url, "transcript_source": tsrc,
             "has_transcript": bool(segs), "transcript_minutes": round(segs[-1]["start"] / 60) if segs else 0})
         print(f"[episode] {ep.source_id}: transcript={tsrc or 'none'}")

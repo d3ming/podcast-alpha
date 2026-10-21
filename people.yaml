@@ -1,0 +1,34 @@
+people:
+  - {name: Jensen Huang, role: NVIDIA CEO, priority: core}
+  - {name: Andy Jassy, role: Amazon CEO, priority: core}
+  - {name: Sundar Pichai, role: Alphabet CEO, priority: core}
+  - {name: Mark Zuckerberg, role: Meta CEO, priority: core}
+  - {name: Satya Nadella, role: Microsoft CEO, priority: core}
+  - {name: Hock Tan, role: Broadcom CEO, priority: watch}
+  - {name: C.C. Wei, role: TSMC CEO, priority: core, aliases: [CC Wei, C. C. Wei]}
+  - {name: Christophe Fouquet, role: ASML CEO, priority: watch}
+  - {name: Marc Benioff, role: Salesforce CEO, priority: watch}
+  - {name: Dara Khosrowshahi, role: Uber CEO, priority: watch}
+  - {name: Tim Cook, role: Apple CEO, priority: core}
+  - {name: Elon Musk, role: Tesla and SpaceX CEO, priority: core}
+  - {name: Lisa Su, role: AMD CEO, priority: core}
+  - {name: Bill McDermott, role: ServiceNow CEO, priority: watch}
+  - {name: Tobi Lutke, role: Shopify CEO, priority: watch, aliases: [Tobi Lütke]}
+  - {name: Adam Foroughi, role: AppLovin CEO, priority: watch}
+  - {name: Warren Buffett, role: Berkshire Hathaway chairman, priority: watch}
+  - {name: Greg Abel, role: Berkshire Hathaway CEO, priority: watch}
+  - {name: Sam Altman, role: OpenAI CEO, priority: core}
+  - {name: Greg Brockman, role: OpenAI president, priority: watch}
+  - {name: Dario Amodei, role: Anthropic CEO, priority: core}
+  - {name: Demis Hassabis, role: Google DeepMind CEO, priority: core}
+  - {name: Mustafa Suleyman, role: Microsoft AI CEO, priority: watch}
+  - {name: Alexandr Wang, role: Meta Superintelligence Labs, priority: watch, aliases: [Alexander Wang]}
+  - {name: Arthur Mensch, role: Mistral AI CEO, priority: watch}
+  - {name: Ilya Sutskever, role: Safe Superintelligence CEO, priority: watch}
+  - {name: Mira Murati, role: Thinking Machines Lab CEO, priority: watch}
+  - {name: Michael Truell, role: Cursor CEO, priority: watch}
+  - {name: Aravind Srinivas, role: Perplexity CEO, priority: watch}
+  - {name: Jared Kaplan, role: Anthropic chief science officer, priority: watch}
+  - {name: Michael Intrator, role: CoreWeave CEO, priority: watch}
+  - {name: Larry Ellison, role: Oracle chairman and CTO, priority: core}
+  - {name: Clay Magouyrk, role: Oracle co-CEO, priority: watch}

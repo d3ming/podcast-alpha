@@ -23,6 +23,7 @@ class Episode:
     transcript_urls: list | None = None
     audio_url: str | None = None
     description: str = ""
+    via: str = ""
 
 
 def canonical_id(guid: str | None, youtube_id: str | None, link: str | None) -> str:
