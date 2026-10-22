@@ -34,7 +34,8 @@ def cite(c: dict, url: str) -> str:
 
 
 def render(data: dict) -> str:
-    lines = [f"# {data['title']}", "", "## Essential Episodes", ""]
+    lines = [f"# {data['title']}", "", "## Key Insights", ""] + [f"- {k}" for k in data["key_insights"]]
+    lines += ["", "## Essential Episodes", ""]
     lines += [f"{i}. **{e['headline']}** {e['show']}, with {e['guests']}" for i, e in enumerate(data["essential"], 1)]
     for ep in data["episodes"]:
         lines += ["", "---", "", f"## [{ep['headline']}]({ep['url']})", "", "### THE SIGNAL", ""]

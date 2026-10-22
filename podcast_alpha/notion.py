@@ -5,7 +5,6 @@ import os
 import re
 from pathlib import Path
 
-import requests
 
 API = "https://api.notion.com/v1"
 NUMBERED = re.compile(r"^\d+\. ")
@@ -83,6 +82,8 @@ def parent() -> str | None:
 
 
 def publish(md: str, title: str, parent_id: str | None = None) -> str:
+    import requests
+
     token = os.environ.get("NOTION_TOKEN")
     parent_id = parent_id or parent()
     if not token or not parent_id:

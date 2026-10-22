@@ -29,7 +29,8 @@ Commands below use `pa` for `.venv/bin/python -m podcast_alpha.cli`.
 4. Report: follow `prompts/report.md`, write `runs/<name>/report.json` (`schema/report.schema.json`).
 5. Render/publish: `pa report runs/<name>/report.json` writes `report.md`; with `NOTION_TOKEN` and a parent page
    (`NOTION_PARENT_PAGE_ID`, else `notion_parent_page_id` in `publish.yaml`, else `--notion-parent`) it also creates
-   the Notion page. Without a token, publish `report.md` with a Notion connector.
+   the Notion page. Without `NOTION_TOKEN` it skips the API, still writes `report.md` and exits 0; publish `report.md`
+   through a Notion connector. `report.md` opens with Key Insights, then Essential Episodes.
 
 The weekly ranking path (`fetch`, `prompts/rank.md`, `publish`) and the Mac YouTube fallback are in README.md.
 

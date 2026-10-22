@@ -14,7 +14,7 @@ from podcast_alpha.ranked import RankedError
 NOW = datetime(2026, 10, 21, 12, tzinfo=timezone.utc)
 EMAIL = (Path(__file__).parent / "fixtures" / "reference_email.txt").read_text()
 SIG = {"text": "t", "speaker": "Jane Placeholder", "timestamp": 75, "our_read": "r"}
-REPORT = {"date": "2026-10-21", "title": "Podcast Intel: test", "run_dir": "runs/x",
+REPORT = {"date": "2026-10-21", "title": "Podcast Intel: test", "run_dir": "runs/x", "key_insights": ["k1", "k2", "k3"],
           "essential": [{"episode_id": f"yt:{k}", "headline": "Jane on robots", "show": "Widget Show", "guests": "Host and Jane, CEO"}
                         for k in "abc"],
           "episodes": [{"episode_id": f"yt:{k}", "headline": "Jane on robots", "url": f"https://www.youtube.com/watch?v={k}",
@@ -53,6 +53,7 @@ def test_tmtb_run_writes_missed(tmp_path):
 
 def test_report_validates_and_renders():
     md = report.render(report.validate(copy.deepcopy(REPORT), "report"))
+    assert md.index("## Key Insights") < md.index("- k1") < md.index("## Essential Episodes")
     assert "## Essential Episodes" in md and "1. **Jane on robots** Widget Show" in md
     assert "### THE SIGNAL" in md and "### 01 Demand" in md
     assert "- t [Jane Placeholder, [0:01:15](https://www.youtube.com/watch?v=a&t=75s)] (our read: r)" in md
@@ -65,6 +66,9 @@ def test_report_validates_and_renders():
     lambda d: d["episodes"][0]["signal"].extend([SIG, SIG]),
     lambda d: d["episodes"][0].update(episode_id="yt:zzz"),
     lambda d: d["episodes"].pop(),
+    lambda d: d.pop("key_insights"),
+    lambda d: d.update(key_insights=["a", "b"]),
+    lambda d: d.update(key_insights=["a"] * 6),
     lambda d: d["essential"].append(dict(d["essential"][0])),
     lambda d: d["essential"][0].update(guests="holding 5%") or d.update(title="x") or d["episodes"][0]["sections"][0].update(weight=1),
 ])
@@ -116,3 +120,20 @@ def test_daily_people_first(tmp_path, monkeypatch):
     m = json.loads((run / "manifest.json").read_text())
     assert order == [("people", 1.5), "channels"]
     assert [e["episode_id"] for e in m["episodes"]] == ["rss:p", "rss:d"] and m["days"] == 1.5
+
+
+def test_notion_blocks_start_with_key_insights():
+    blocks = notion.md_to_blocks(report.render(REPORT))
+    assert blocks[0]["type"] == "heading_2" and blocks[0]["heading_2"]["rich_text"][0]["text"]["content"] == "Key Insights"
+
+
+def test_report_without_token_writes_md_and_exits_zero(tmp_path, monkeypatch, capsys):
+    from podcast_alpha.cli import main
+
+    monkeypatch.delenv("NOTION_TOKEN", raising=False)
+    monkeypatch.setattr(notion, "publish", lambda *a: pytest.fail("API called without token"))
+    p = tmp_path / "report.json"
+    p.write_text(json.dumps(REPORT))
+    main(["report", str(p)])
+    assert (tmp_path / "report.md").read_text().startswith("# Podcast Intel: test\n\n## Key Insights")
+    assert "Notion connector" in capsys.readouterr().out

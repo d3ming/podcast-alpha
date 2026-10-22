@@ -53,10 +53,12 @@ def render_report(args) -> None:
     out = Path(args.out or Path(args.report).with_name("report.md"))
     out.write_text(report.render(data))
     print(f"[report] {out}")
-    if os.environ.get("NOTION_TOKEN") and (args.notion_parent or notion.parent()):
-        print(f"[notion] {notion.publish(out.read_text(), data['title'], args.notion_parent)}")
+    if not os.environ.get("NOTION_TOKEN"):
+        print(f"[notion] NOTION_TOKEN not set; skipped the API. Publish {out} through a Notion connector.")
+    elif not (args.notion_parent or notion.parent()):
+        print(f"[notion] no parent page (NOTION_PARENT_PAGE_ID, publish.yaml or --notion-parent); publish {out} through a Notion connector.")
     else:
-        print("[notion] no NOTION_TOKEN or parent; publish report.md with the Notion connector")
+        print(f"[notion] {notion.publish(out.read_text(), data['title'], args.notion_parent)}")
 
 
 def tmtb_import(args) -> None:

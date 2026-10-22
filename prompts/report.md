@@ -5,6 +5,8 @@ Output: `report.json` valid against `schema/report.schema.json`, then `podcast-a
 
 Shape:
 - `title`: "Podcast Intel: " plus the main guests and topics, comma separated.
+- `key_insights`: 3-5 short strings (under 200 characters), the most decision-relevant takeaways across all three
+  episodes, each naming the company or sector affected. They render first, above Essential Episodes.
 - `essential`: exactly 3 entries, the selected episodes in priority order. `headline` names the guest, their company and the
   2-3 most useful topics; `show`; `guests`: "host and guest, role".
 - `episodes`: exactly 3, one per essential entry, same order:
