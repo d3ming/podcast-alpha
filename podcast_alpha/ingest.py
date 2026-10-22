@@ -78,6 +78,19 @@ def transcript_links(entry) -> list[dict]:
     return [l for l in links if l.get("url")]
 
 
+AUDIO_URL = re.compile(r"\.(mp3|m4a|aac|ogg|opus|wav)(\?|$)|podtrac|swap\.fm|traffic\.megaphone|/redirect\.mp3|chtbl\.com|pdst\.fm", re.I)
+
+
+def page_url(entry, audio: str | None, feed_link: str | None = None) -> str:
+    """Episode page for display: item link unless it is the enclosure or a tracking/audio URL; else the show page."""
+    cands = [entry.get("link")] + [l.get("href") for l in entry.get("links", [])
+                                   if l.get("rel") in (None, "alternate") and not (l.get("type") or "").startswith("audio")]
+    for u in cands:
+        if u and u != audio and not AUDIO_URL.search(u):
+            return u
+    return feed_link if feed_link and not AUDIO_URL.search(feed_link) else ""
+
+
 def from_rss(src: Source, now: datetime, days: int, parsed=None) -> list[Episode]:
     if parsed is None:
         import feedparser
@@ -92,7 +105,7 @@ def from_rss(src: Source, now: datetime, days: int, parsed=None) -> list[Episode
         out.append(Episode(
             id=canonical_id(e.get("id") or e.get("guid"), None, e.get("link")),
             source_id=src.id, source_name=src.name, tier=src.tier,
-            title=e.get("title", "").strip(), url=e.get("link") or audio or "",
+            title=e.get("title", "").strip(), url=page_url(e, audio, (feed.get("feed") or {}).get("link")),
             published_at=dt, transcript_urls=transcript_links(e), audio_url=audio,
             description=e.get("summary", "")[:2000],
         ))

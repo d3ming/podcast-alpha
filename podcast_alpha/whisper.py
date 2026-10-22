@@ -8,6 +8,7 @@ import tempfile
 
 MODEL = os.environ.get("PA_WHISPER_MODEL", "base.en")
 YTDLP_PACE = ["--sleep-requests", "2", "--sleep-interval", "10", "--max-sleep-interval", "30", "--limit-rate", "1M"]
+DOWNLOAD_SECONDS = int(os.environ.get("PA_DOWNLOAD_SECONDS", "900"))  # a trickling server must not hold the queue
 _model = None
 
 
@@ -64,11 +65,16 @@ def transcribe(audio_url: str | None, budget: Budget | None) -> tuple[list[dict]
 
     from .ingest import UA
 
+    import time
+
+    deadline = time.monotonic() + DOWNLOAD_SECONDS
     with tempfile.NamedTemporaryFile(suffix=".audio") as f:
         with requests.get(audio_url, stream=True, timeout=60, headers=UA) as r:
             r.raise_for_status()
             for chunk in r.iter_content(1 << 20):
                 f.write(chunk)
+                if time.monotonic() > deadline:
+                    raise TimeoutError(f"download over {DOWNLOAD_SECONDS}s")
         f.flush()
         return transcribe_file(f.name, budget)
 

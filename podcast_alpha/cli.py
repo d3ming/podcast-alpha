@@ -65,7 +65,21 @@ def tmtb_import(args) -> None:
     from .tmtb import run
 
     text = sys.stdin.read() if args.email == "-" else Path(args.email).read_text()
-    run(text, Path(args.run), days=args.days)
+    run_dir = Path(args.run) if args.run else ROOT / "runs" / run_date(args.date)
+    if not (run_dir / "manifest.json").exists():
+        sys.exit(f"[tmtb] no manifest in {run_dir}; pass --run or --date")
+    run(text, run_dir, days=args.days)
+
+
+def run_date(value: str, today=None) -> str:
+    from datetime import date, timedelta
+
+    today = today or date.today()
+    if value == "yesterday":
+        return (today - timedelta(days=1)).isoformat()
+    if value == "today":
+        return today.isoformat()
+    return date.fromisoformat(value).isoformat()
 
 
 def add_fetch_args(f) -> None:
@@ -101,6 +115,7 @@ def main(argv=None):
     t.add_argument("--retry-errors", action="store_true", help="retry episodes that failed before")
     t.add_argument("--include-reruns", action="store_true")
     t.add_argument("--min-transcript-chars", type=int, default=5000)
+    t.add_argument("--skip-news", action="store_true", help="skip news/market-recap shows (default: whisper them last)")
     m = sub.add_parser("merge", help="merge a --youtube-only output dir into a run folder")
     m.add_argument("dir")
     m.add_argument("--into", required=True)
@@ -110,6 +125,7 @@ def main(argv=None):
     d.add_argument("--hours", type=float, default=48)
     d.add_argument("--minutes", type=float, default=600, help="whisper budget for the queued transcribe")
     d.add_argument("--no-transcribe", action="store_true")
+    d.add_argument("--skip-news", action="store_true", help="queued transcribe skips news shows (default: last)")
     d.add_argument("--tmtb", help="reference email body to run tmtb-import as a recall check after fetch")
     c = sub.add_parser("check", help="validate selected.json or report.json")
     c.add_argument("kind", choices=["selected", "report"])
@@ -120,7 +136,9 @@ def main(argv=None):
     r.add_argument("--notion-parent")
     ti = sub.add_parser("tmtb-import", help="parse a pasted reference email into seeds and list what the run missed")
     ti.add_argument("email", help="path to the email body, or - for stdin")
-    ti.add_argument("--run", required=True)
+    ti.add_argument("--run", help="run folder (default: runs/<--date>)")
+    ti.add_argument("--date", default="yesterday",
+                    help="run date to check: yesterday (default; TMTB lands ~2:40 PM PT, check next morning), today, or YYYY-MM-DD")
     ti.add_argument("--days", type=float, default=4)
     p = sub.add_parser("publish", help="validate ranked.json and render the digest")
     p.add_argument("ranked")

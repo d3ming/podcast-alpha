@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
+import time
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -156,6 +158,7 @@ def fetch(args) -> Path:
             manifest["excluded"].append({"episode_id": e.id, "title": e.title, "published": e.published_at.isoformat(), "why": why})
             print(f"[window] skip {why}: {e.title[:60]}")
     budget = Budget(args.whisper_minutes or 0, args.whisper_per_episode)
+    news_ids = {s.id for s in sources if s.news}
     eps.sort(key=lambda e: (e.source_id.startswith("person:") != people_first, e.tier, -e.published_at.timestamp()))
     for ep in eps:
         dup = not args.refetch and (store.seen(ep.id) or any(k.id != ep.id and title_match(k.title, ep.title) >= 0.8 for k in known))
@@ -164,7 +167,9 @@ def fetch(args) -> Path:
             print(f"[dedupe] skip {ep.id}")
             continue
         segs, tsrc = get_transcript(ep, budget)
-        manifest["episodes"].append(write_episode(run_dir, ep, segs, tsrc, getattr(args, "min_transcript_chars", MIN_TRANSCRIPT_CHARS)))
+        row = write_episode(run_dir, ep, segs, tsrc, getattr(args, "min_transcript_chars", MIN_TRANSCRIPT_CHARS))
+        row["news"] = ep.source_id in news_ids
+        manifest["episodes"].append(row)
         store.add_episode(ep, tsrc)
     manifest["whisper_minutes"] = round(budget.used / 60, 1)
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
@@ -181,27 +186,44 @@ def transcribe_run(args) -> Path:
     budget, store = Budget(args.minutes, args.per_episode), Store(args.db) if args.db else None
     retry, reruns = getattr(args, "retry_errors", False), getattr(args, "include_reruns", False)
     min_chars, tried = getattr(args, "min_transcript_chars", MIN_TRANSCRIPT_CHARS), set()
+    from .whisper import available
+
+    if not available():
+        raise SystemExit(f"[transcribe] faster_whisper is not importable from {sys.executable}; "
+                         f"run with the venv that has it (e.g. /workspace/pa-venv/bin/podcast-alpha) or set PA_PYTHON")
+    skip_news = getattr(args, "skip_news", False)
     lock = run_dir / "transcribe.lock"
     if lock.exists() and not args.force:
-        raise SystemExit(f"[transcribe] {lock} exists; another job may be running (use --force)")
+        pid = lock.read_text().strip()
+        if pid_alive(pid):
+            raise SystemExit(f"[transcribe] {lock} held by running pid {pid} (use --force)")
+        log(f"stale lock from dead pid {pid or '?'}; taking over")
     lock.write_text(str(os.getpid()))
+    reuse = ReuseIndex(run_dir.parent, exclude=run_dir)
     try:
         save(path, refresh_flags(json.loads(path.read_text()), run_dir, min_chars))
         while True:
             manifest = json.loads(path.read_text())
             todo = [e for e in manifest["episodes"] if not e["has_transcript"] and e.get("audio_url") 
                     and e["episode_id"] not in tried and (retry or not e.get("whisper_error"))
-                    and not (e.get("rerun") and not reruns)]
-            todo.sort(key=lambda e: not e.get("source_tag", "").startswith("person:"))
+                    and not (e.get("rerun") and not reruns) and not (skip_news and is_news(e))]
+            todo.sort(key=lambda e: (not e.get("source_tag", "").startswith("person:"), is_news(e)))
             if not todo or budget.take() < 60:
                 break
             e = todo[0]
             tried.add(e["episode_id"])
             e.pop("whisper_error", None)
             log(f"start {e['episode_id']} ({len(todo)} left, {round(budget.left / 60)} min budget) {e['title'][:60]}")
+            hit = reuse.find(e)
             try:
-                segs, used = transcribe(e["audio_url"], budget)
-                tsrc = f"whisper ({round(used / 60)} min)"
+                if hit:
+                    segs, tsrc, used = hit[0], hit[1], 0.0
+                    log(f"reuse {e['episode_id']} from {hit[2]}")
+                else:
+                    t0 = time.monotonic()
+                    segs, used = transcribe(e["audio_url"], budget)
+                    tsrc = f"whisper ({round(used / 60)} min)"
+                    log(f"whispered {round(used / 60)} audio min in {round(time.monotonic() - t0)} s wall")
             except Exception as exc:
                 segs, tsrc, e["whisper_error"] = None, None, type(exc).__name__
             if segs and is_fallback(segs, min_chars):
@@ -224,6 +246,97 @@ def transcribe_run(args) -> Path:
         lock.unlink(missing_ok=True)
     log(f"finished, {round(budget.used / 60, 1)} min used")
     return run_dir
+
+
+NEWS = re.compile(r"halftime|squawk|power lunch|closing bell|fast money|mad money|news briefing|morning briefing|"
+                  r"the exchange|worldwide exchange|markets daily|bloomberg surveillance", re.I)
+
+
+def is_news(e: dict) -> bool:
+    return bool(e.get("news")) or bool(NEWS.search(f"{e.get('source', '')} {e.get('source_tag', '')}"))
+
+
+def pid_alive(pid: str) -> bool:
+    try:
+        os.kill(int(pid), 0)
+    except (ValueError, ProcessLookupError):
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def norm_title(t: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (t or "").lower()).strip()
+
+
+TRACKER = re.compile(r"^(dts\.podtrac\.com/redirect\.mp3/|www\.podtrac\.com/pts/redirect\.mp3/|chtbl\.com/track/[^/]+/|"
+                     r"pdst\.fm/e/|prfx\.byspotify\.com/e/|tracking\.swap\.fm/track/[^/]+/|claritaspod\.com/measure/|"
+                     r"arttrk\.com/p/[^/]+/|verifi\.podscribe\.com/rss/p/|pfx\.vpixl\.com/[^/]+/|mgln\.ai/e/[^/]+/|op3\.dev/e/)")
+
+
+def norm_audio(u: str | None) -> str:
+    """Host + path of the enclosure with query and tracking-redirect prefixes (podtrac, swap.fm, ...) stripped."""
+    if not u:
+        return ""
+    u = re.sub(r"^https?://", "", u.split("?", 1)[0].lower())
+    while (m := TRACKER.match(u)):
+        u = re.sub(r"^https?://", "", u[m.end():])
+    return u
+
+
+def segments_from_md(text: str) -> list[dict]:
+    def parse_ts(t: str) -> float:
+        sec = 0
+        for part in t.split(":"):
+            sec = sec * 60 + int(part)
+        return float(sec)
+
+    body = text.partition("## Transcript")[2]
+    out = []
+    for line in body.splitlines():
+        m = re.match(r"^\[([\d:]+)\]\s*(.*)$", line)
+        if m:
+            out.append({"start": parse_ts(m.group(1)), "speaker": None, "text": m.group(2)})
+    return out
+
+
+class ReuseIndex:
+    """Transcripts already made in other run folders, keyed by episode id, enclosure, and show + title."""
+
+    def __init__(self, runs: Path, exclude: Path | None = None):
+        self.by = {}
+        for mp in sorted(runs.glob("*/manifest.json")):
+            if exclude and mp.parent.resolve() == exclude.resolve():
+                continue
+            try:
+                eps = json.loads(mp.read_text()).get("episodes", [])
+            except (OSError, ValueError):
+                continue
+            for e in eps:
+                if e.get("has_transcript"):
+                    for k in self.keys(e):
+                        self.by.setdefault(k, (mp.parent, e))
+
+    @staticmethod
+    def keys(e: dict) -> list[str]:
+        ks = [f"id:{e['episode_id']}"]
+        if norm_audio(e.get("audio_url")):
+            ks.append(f"audio:{norm_audio(e.get('audio_url'))}")
+        if norm_title(e.get("title")):
+            ks.append(f"title:{norm_title(e.get('source') or e.get('source_tag', '').split(',')[0])}|{norm_title(e['title'])}")
+        return ks
+
+    def find(self, e: dict):
+        for k in self.keys(e):
+            if k in self.by:
+                d, old = self.by[k]
+                md = d / old["file"]
+                if md.exists():
+                    segs = segments_from_md(md.read_text())
+                    if segs and transcript_chars(segs) >= MIN_TRANSCRIPT_CHARS:
+                        return segs, old["transcript_source"], f"{d.name}/{old['file']}"
+        return None
 
 
 def save(path: Path, manifest: dict) -> None:
@@ -257,13 +370,37 @@ def with_transcript(md: str, segs: list[dict], tsrc: str) -> str:
     return head + "## Transcript\n\n" + "\n".join(lines) + "\n"
 
 
-def queue_transcribe(run_dir: Path, minutes: float, db: str | None) -> int:
-    import subprocess
-    import sys
+ROOT = Path(__file__).resolve().parent.parent
 
-    cmd = [sys.executable, "-m", "podcast_alpha.cli", "transcribe", str(run_dir), "--minutes", str(minutes)]
+
+def has_whisper(python: str) -> bool:
+    import subprocess
+
+    try:
+        return subprocess.run([python, "-c", "import faster_whisper, podcast_alpha"], capture_output=True, timeout=120,
+                              cwd=ROOT).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def whisper_python() -> str:
+    """Interpreter for the background transcribe: PA_PYTHON, this one, the repo .venv, then /workspace/pa-venv."""
+    cands = [os.environ.get("PA_PYTHON"), sys.executable, str(ROOT / ".venv" / "bin" / "python"), "/workspace/pa-venv/bin/python"]
+    for c in dict.fromkeys(x for x in cands if x):
+        if (c == sys.executable or Path(c).exists()) and has_whisper(c):
+            return c
+    raise SystemExit("[daily] no interpreter with faster_whisper (tried " + ", ".join(x for x in cands if x) +
+                     "). Install with `pip install -e '.[whisper]'` or set PA_PYTHON; rerun with --no-transcribe to skip.")
+
+
+def queue_transcribe(run_dir: Path, minutes: float, db: str | None, python: str | None = None, skip_news: bool = False) -> int:
+    import subprocess
+
+    cmd = [python or whisper_python(), "-m", "podcast_alpha.cli", "transcribe", str(run_dir), "--minutes", str(minutes)]
     if db:
         cmd += ["--db", db]
+    if skip_news:
+        cmd.append("--skip-news")
     with open(run_dir / "transcribe.log", "a") as log_file:
         proc = subprocess.Popen(cmd, stdout=log_file, stderr=subprocess.STDOUT, start_new_session=True,
                                 cwd=Path(__file__).resolve().parent.parent)
@@ -272,14 +409,15 @@ def queue_transcribe(run_dir: Path, minutes: float, db: str | None) -> int:
 
 def daily(args) -> Path:
     args.days, args.people_first, args.youtube_only = args.hours / 24, True, False
+    python = None if args.no_transcribe else whisper_python()  # fail fast, before the slow fetch
     run_dir = fetch(args)
     if args.tmtb:
         from .tmtb import run as tmtb_run
 
         tmtb_run(Path(args.tmtb).read_text(), run_dir, days=max(args.days, 2))
     if args.no_transcribe:
-        print(f"[daily] transcribe later: podcast-alpha transcribe {run_dir}")
+        print(f"[daily] transcribe later: /workspace/pa-venv/bin/podcast-alpha transcribe {run_dir}")
     else:
-        pid = queue_transcribe(run_dir, args.minutes, args.db)
-        print(f"[daily] transcribe queued pid={pid} log={run_dir / 'transcribe.log'}")
+        pid = queue_transcribe(run_dir, args.minutes, args.db, python, getattr(args, "skip_news", False))
+        print(f"[daily] transcribe queued pid={pid} python={python} log={run_dir / 'transcribe.log'}")
     return run_dir

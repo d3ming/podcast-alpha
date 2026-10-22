@@ -15,6 +15,10 @@ from .transcribe import title_match
 PEOPLE_DEFAULTS = {"preferred_source": "itunes", "fallback": [], "transcripts": ["podcast_transcript", "whisper"]}
 
 CLIP = re.compile(r"#shorts|\bclips?\b|\breacts?\b|\breaction\b|\bhighlights?\b|\bexplained\b|\bAI voice\b", re.I)
+OFF_GENRES = {"sports", "fiction", "kids & family", "religion & spirituality", "comedy", "leisure", "true crime",
+              "tv & film", "music", "fantasy sports", "football", "basketball", "baseball", "hockey", "soccer"}
+OFF_TOPIC = re.compile(r"\b(sports?|radio show|football|basketball|baseball|hockey|soccer|nfl|nba|mlb|nhl|ncaa|fcs|playoffs?|"
+                       r"quarterback|touchdown|tip-?off|recruiting|fantasy|vs\.? [A-Z]{2,4}\b)", re.I)
 WINDOW = [(1, "EgQIAhAB"), (7, "EgQIAxAB"), (31, "EgQIBBAB"), (366, "EgQIBRAB")]
 
 
@@ -27,6 +31,7 @@ class Person:
     preferred_source: str = "itunes"
     fallback: list[str] = field(default_factory=list)
     transcripts: list[str] = field(default_factory=list)
+    context: list[str] = field(default_factory=list)  # for common names: one must appear in title/description/show
 
     @property
     def order(self) -> list[str]:
@@ -60,6 +65,23 @@ def mentions(person: Person, *texts: str) -> bool:
     return any(f" {norm(n)} " in hay for n in person.names)
 
 
+def genres(r: dict) -> set[str]:
+    g = r.get("genres") or []
+    names = [x.get("name", "") if isinstance(x, dict) else str(x) for x in g] + [r.get("primaryGenreName") or ""]
+    return {n.lower() for n in names if n}
+
+
+def on_topic(person: Person, title: str, description: str, show: str, genre_names: set[str] = frozenset()) -> bool:
+    """Reject same-name hits from sports, fiction, etc. and, when `context` is set, hits that never mention it."""
+    if genre_names & OFF_GENRES or OFF_TOPIC.search(f"{title} {show}"):
+        return False
+    if person.context:
+        norm = lambda s: re.sub(r"[^a-z0-9]+", " ", (s or "").lower())
+        hay = f" {norm(title)} {norm(description)} {norm(show)} "
+        return any(f" {norm(c).strip()} " in hay for c in person.context)
+    return True
+
+
 def is_clip(title: str, channel: str, description: str, duration: float | None, min_minutes: int) -> bool:
     if (duration or 0) < min_minutes * 60:
         return True
@@ -72,6 +94,7 @@ def _ep(person: Person, **kw) -> Episode:
 
 def youtube_candidates(person: Person, min_minutes: int, rows: list[dict]) -> list[dict]:
     return [r for r in rows if mentions(person, r.get("title"), r.get("description"))
+            and on_topic(person, r.get("title", ""), r.get("description", ""), r.get("channel", ""))
             and not is_clip(r.get("title", ""), r.get("channel", ""), r.get("description", ""), r.get("duration"), min_minutes)]
 
 
@@ -102,6 +125,8 @@ def parse_itunes(person: Person, results: list[dict], now: datetime, days: int, 
         if not dt or not in_window(dt, now, days) or (r.get("trackTimeMillis") or 0) < min_minutes * 60000:
             continue
         if not mentions(person, r.get("trackName"), r.get("description")):
+            continue
+        if not on_topic(person, r.get("trackName", ""), r.get("description", ""), r.get("collectionName", ""), genres(r)):
             continue
         out.append(_ep(person, id=canonical_id(r.get("episodeGuid"), None, r.get("trackViewUrl")), show=r.get("collectionName", ""),
                        title=r.get("trackName", ""), url=r.get("trackViewUrl") or r.get("episodeUrl", ""), published_at=dt,

@@ -56,7 +56,7 @@ people:
   - {name: David George, role: a16z, priority: watch}
   - {name: Dan Loeb, role: Third Point, priority: watch}
   # Added 2026-10-21 from the TMTB Podcast Intel miss analysis (Oct 8-21).
-  - {name: Eric Schmidt, role: former Google CEO, priority: core}
+  - {name: Eric Schmidt, role: former Google CEO, priority: core, context: [Google, AI, Alphabet, China, tech, technology, defense]}
   - {name: Michael Dell, role: Dell Technologies CEO, priority: core}
   - {name: Sarah Friar, role: OpenAI CFO, priority: core}
   - {name: Vlad Tenev, role: Robinhood CEO, priority: core}

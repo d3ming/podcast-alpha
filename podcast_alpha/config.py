@@ -21,6 +21,7 @@ class Source:
     preferred_source: str = "rss"
     fallback: list[str] = field(default_factory=list)
     transcripts: list[str] = field(default_factory=list)
+    news: bool = False  # daily news/market-recap show: whispered last (or skipped with --skip-news)
 
     @property
     def order(self) -> list[str]:
