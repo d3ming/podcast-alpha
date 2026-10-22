@@ -15,10 +15,12 @@ NOW = datetime(2026, 10, 21, 12, tzinfo=timezone.utc)
 EMAIL = (Path(__file__).parent / "fixtures" / "reference_email.txt").read_text()
 SIG = {"text": "t", "speaker": "Jane Placeholder", "timestamp": 75, "our_read": "r"}
 REPORT = {"date": "2026-10-21", "title": "Podcast Intel: test", "run_dir": "runs/x",
-          "essential": [{"episode_id": "yt:a", "headline": "Jane on robots", "show": "Widget Show", "guests": "Host and Jane, CEO"}],
-          "episodes": [{"episode_id": "yt:a", "headline": "Jane on robots", "url": "https://www.youtube.com/watch?v=a",
+          "essential": [{"episode_id": f"yt:{k}", "headline": "Jane on robots", "show": "Widget Show", "guests": "Host and Jane, CEO"}
+                        for k in "abc"],
+          "episodes": [{"episode_id": f"yt:{k}", "headline": "Jane on robots", "url": f"https://www.youtube.com/watch?v={k}",
                         "signal": [SIG, SIG, {**SIG, "timestamp": None}],
-                        "sections": [{"title": "Demand", "body": "b", "claims": [{"text": "c", "speaker": "host", "timestamp": 3}]}]}]}
+                        "sections": [{"title": "Demand", "body": "b", "claims": [{"text": "c", "speaker": "host", "timestamp": 3}]}]}
+                       for k in "abc"]}
 
 
 def pick(i):
@@ -62,6 +64,8 @@ def test_report_validates_and_renders():
     lambda d: d["episodes"][0]["signal"][0].pop("speaker"),
     lambda d: d["episodes"][0]["signal"].extend([SIG, SIG]),
     lambda d: d["episodes"][0].update(episode_id="yt:zzz"),
+    lambda d: d["episodes"].pop(),
+    lambda d: d["essential"].append(dict(d["essential"][0])),
     lambda d: d["essential"][0].update(guests="holding 5%") or d.update(title="x") or d["episodes"][0]["sections"][0].update(weight=1),
 ])
 def test_report_rejects(mutate):
@@ -72,9 +76,9 @@ def test_report_rejects(mutate):
 
 
 def test_selected_schema_bounds():
-    good = {"date": "2026-10-21", "run_dir": "runs/x", "selected_by": "Cain", "episodes": [pick(i) for i in range(5)]}
+    good = {"date": "2026-10-21", "run_dir": "runs/x", "selected_by": "Cain", "episodes": [pick(i) for i in range(3)]}
     report.validate(good, "selected")
-    for n in (4, 9):
+    for n in (2, 4):
         with pytest.raises(RankedError):
             report.validate({**good, "episodes": [pick(i) for i in range(n)]}, "selected")
 

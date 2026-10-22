@@ -175,6 +175,7 @@ def transcribe_run(args) -> Path:
         while True:
             manifest = json.loads(path.read_text())
             todo = [e for e in manifest["episodes"] if not e["has_transcript"] and e.get("audio_url") and not e.get("whisper_error")]
+            todo.sort(key=lambda e: not e.get("source_tag", "").startswith("person:"))
             if not todo or budget.take() < 60:
                 break
             e = todo[0]

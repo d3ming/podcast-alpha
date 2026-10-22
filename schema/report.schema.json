@@ -22,13 +22,13 @@
     "title": {"type": "string"},
     "run_dir": {"type": "string"},
     "essential": {
-      "type": "array", "minItems": 1, "maxItems": 8,
+      "type": "array", "minItems": 3, "maxItems": 3,
       "items": {"type": "object", "required": ["episode_id", "headline", "show", "guests"], "additionalProperties": false,
                 "properties": {"episode_id": {"type": "string"}, "headline": {"type": "string"}, "show": {"type": "string"},
                                "guests": {"type": "string"}}}
     },
     "episodes": {
-      "type": "array", "minItems": 1,
+      "type": "array", "minItems": 3, "maxItems": 3,
       "items": {
         "type": "object",
         "required": ["episode_id", "headline", "url", "signal", "sections"],

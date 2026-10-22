@@ -9,7 +9,7 @@
     "run_dir": {"type": "string"},
     "selected_by": {"type": "string"},
     "episodes": {
-      "type": "array", "minItems": 5, "maxItems": 8,
+      "type": "array", "minItems": 3, "maxItems": 3,
       "items": {
         "type": "object",
         "required": ["episode_id", "title", "show", "url", "guests", "kind", "why"],

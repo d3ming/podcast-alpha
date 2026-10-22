@@ -25,7 +25,7 @@ Commands below use `pa` for `.venv/bin/python -m podcast_alpha.cli`.
    `pa transcribe runs/<name>` (resumable; `--minutes` budget, default 600).
 2. Optional: `pa tmtb-import email.txt --run runs/<name>` (or `-` for stdin) with a pasted reference email body.
    Writes `seeds.json`, `missed.json`, `missed.md`. Never scrape Substack.
-3. Select: follow `prompts/select.md`, write `runs/<name>/selected.json`, check with `pa check selected <file>`.
+3. Select exactly 3 strict picks (novel exec/investor signal, no recaps or news shows): follow `prompts/select.md`, write `runs/<name>/selected.json`, check with `pa check selected <file>`.
 4. Report: follow `prompts/report.md`, write `runs/<name>/report.json` (`schema/report.schema.json`).
 5. Render/publish: `pa report runs/<name>/report.json` writes `report.md`; with `NOTION_TOKEN` and a parent page
    (`NOTION_PARENT_PAGE_ID`, else `notion_parent_page_id` in `publish.yaml`, else `--notion-parent`) it also creates

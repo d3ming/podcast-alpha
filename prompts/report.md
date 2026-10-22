@@ -5,9 +5,9 @@ Output: `report.json` valid against `schema/report.schema.json`, then `podcast-a
 
 Shape:
 - `title`: "Podcast Intel: " plus the main guests and topics, comma separated.
-- `essential`: one entry per selected episode, in priority order. `headline` names the guest, their company and the
+- `essential`: exactly 3 entries, the selected episodes in priority order. `headline` names the guest, their company and the
   2-3 most useful topics; `show`; `guests`: "host and guest, role".
-- `episodes`: one per essential entry, same order:
+- `episodes`: exactly 3, one per essential entry, same order:
   - `signal`: 3-4 bullets, the most investable points first. Each has `text` (what was said, in your words),
     `speaker`, `timestamp` and `our_read` (one clause on why it matters: who benefits, who is at risk, what to watch).
   - `sections`: 3-6 numbered topics in episode order. `title` is short; `body` is one paragraph of 80-200 words in
