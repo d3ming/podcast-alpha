@@ -62,8 +62,10 @@ def transcribe(audio_url: str | None, budget: Budget | None) -> tuple[list[dict]
         return None, 0.0
     import requests
 
+    from .ingest import UA
+
     with tempfile.NamedTemporaryFile(suffix=".audio") as f:
-        with requests.get(audio_url, stream=True, timeout=60) as r:
+        with requests.get(audio_url, stream=True, timeout=60, headers=UA) as r:
             r.raise_for_status()
             for chunk in r.iter_content(1 << 20):
                 f.write(chunk)

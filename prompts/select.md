@@ -14,6 +14,8 @@ Pick exactly 3. The bar is strict: fewer strong picks beat padding, but the file
    - Decision-relevant: could change a view on a named public company, sector or supply chain.
 3. Reject: recaps, news and markets shows (daily briefings, anchor-led roundups), clip compilations, hosts-only chat,
    reruns, and repeat appearances that add nothing new. One pick per person.
-4. Prefer episodes with a transcript (`has_transcript: true`); a strong pick without one says so in `why`.
-5. `guests`: names and roles as the episode states them. `why`: one sentence naming the new fact and who it affects.
-6. Never include holdings, position sizes or weights.
+4. Prefer genuinely new episodes (published under 24 hours before the run). Skip `rerun: true` (replays, re-airs).
+5. Prefer episodes with a real transcript (`has_transcript: true`). `fallback_text: true` means the text is a short show
+   description, not a transcript: if you still pick it, set `fallback_text: true` and say "fallback" in `why`.
+6. `guests`: names and roles as the episode states them. `why`: one sentence naming the new fact and who it affects.
+7. Never include holdings, position sizes or weights.

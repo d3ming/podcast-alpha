@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import json
 import subprocess
 import sys
@@ -49,6 +50,14 @@ def parse_date(value: str | None) -> datetime | None:
         except ValueError:
             return None
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+UA = {"User-Agent": "podcast-alpha/0.1 (+https://github.com/d3ming/podcast-alpha)"}
+RERUN = re.compile(r"\b(replay|re-?air(ed|ing)?|rebroadcast|encore|rerun|best of|from the archive|originally (aired|released|published))\b", re.I)
+
+
+def is_rerun(title: str, description: str = "") -> bool:
+    return bool(RERUN.search(title or "") or RERUN.search((description or "")[:400]))
 
 
 def in_window(dt: datetime, now: datetime, days: int) -> bool:

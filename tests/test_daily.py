@@ -61,7 +61,6 @@ def test_report_validates_and_renders():
 
 
 @pytest.mark.parametrize("mutate", [
-    lambda d: d["episodes"][0]["signal"][0].pop("our_read"),
     lambda d: d["episodes"][0]["signal"][0].pop("speaker"),
     lambda d: d["episodes"][0]["signal"].extend([SIG, SIG]),
     lambda d: d["episodes"][0].update(episode_id="yt:zzz"),
@@ -115,7 +114,7 @@ def test_daily_people_first(tmp_path, monkeypatch):
     monkeypatch.setattr(fetch_mod, "get_transcript", lambda ep, budget: (None, None))
     args = SimpleNamespace(hours=36, sources="sources.yaml", only=None, db=str(tmp_path / "db"), runs=str(tmp_path), run_name="d",
                            per_source=3, people="people.yaml", per_person=3, whisper_minutes=None, whisper_per_episode=None,
-                           refetch=False, no_transcribe=True, minutes=600)
+                           refetch=False, no_transcribe=True, minutes=600, tmtb=None)
     run = fetch_mod.daily(args)
     m = json.loads((run / "manifest.json").read_text())
     assert order == [("people", 1.5), "channels"]
@@ -137,3 +136,67 @@ def test_report_without_token_writes_md_and_exits_zero(tmp_path, monkeypatch, ca
     main(["report", str(p)])
     assert (tmp_path / "report.md").read_text().startswith("# Podcast Intel: test\n\n## Key Insights")
     assert "Notion connector" in capsys.readouterr().out
+
+
+def test_fallback_text_flagged_and_queued(tmp_path):
+    from podcast_alpha.fetch import refresh_flags, write_episode
+
+    e = Episode(id="rss:x", source_id="person:Sam Altman", source_name="S", tier=2, title="Sam Altman on compute", url="u",
+                published_at=NOW, audio_url="https://a.mp3")
+    short = [{"start": 0, "speaker": None, "text": "show notes " * 150}]
+    row = write_episode(tmp_path, e, short, "podcast:transcript")
+    assert row["has_transcript"] is False and row["transcript_source"] == "fallback" and row["fallback_text"]
+    assert row["fallback_from"] == "podcast:transcript"
+    long = [{"start": i * 10, "speaker": None, "text": "word " * 100} for i in range(20)]
+    assert write_episode(tmp_path, e, long, "podcast:transcript")["has_transcript"]
+    old = {**write_episode(tmp_path, e, long, "podcast:transcript"), "file": write_episode(tmp_path, e, short, "x")["file"]}
+    old.update(has_transcript=True, transcript_source="podcast:transcript")
+    m = refresh_flags({"episodes": [old]}, tmp_path, 5000)
+    assert m["episodes"][0]["transcript_source"] == "fallback" and not m["episodes"][0]["has_transcript"]
+
+
+@pytest.mark.parametrize("title,desc,rerun", [
+    ("Replay: What my kids taught me", "", True),
+    ("Sarah Friar on AI", "This episode originally aired in May.", True),
+    ("Best of 2026: chips", "", True),
+    ("Jensen Huang on GPUs", "A new interview.", False),
+])
+def test_is_rerun(title, desc, rerun):
+    from podcast_alpha.ingest import is_rerun
+    assert is_rerun(title, desc) is rerun
+
+
+def test_daily_excludes_out_of_window_and_reruns(tmp_path, monkeypatch):
+    from datetime import timedelta
+
+    def mk(id, title, age_h):
+        return Episode(id=id, source_id="show", source_name="S", tier=1, title=title, url="u",
+                       published_at=datetime.now(timezone.utc) - timedelta(hours=age_h))
+
+    monkeypatch.setattr(fetch_mod, "discover", lambda *a, **k: [mk("rss:new", "Fresh", 3), mk("rss:old", "Old", 72),
+                                                                 mk("rss:re", "Replay: classic", 5)])
+    monkeypatch.setattr(fetch_mod, "get_transcript", lambda ep, budget: (None, None))
+    args = SimpleNamespace(hours=48, sources="sources.yaml", only=None, db=str(tmp_path / "db"), runs=str(tmp_path), run_name="d",
+                           per_source=3, people="", per_person=3, whisper_minutes=None, whisper_per_episode=None,
+                           refetch=False, no_transcribe=True, minutes=600, tmtb=None)
+    m = json.loads((fetch_mod.daily(args) / "manifest.json").read_text())
+    assert [e["episode_id"] for e in m["episodes"]] == ["rss:new"]
+    assert {x["episode_id"]: x["why"] for x in m["excluded"]} == {"rss:old": "outside window", "rss:re": "rerun"}
+
+
+def test_selected_fallback_must_be_flagged():
+    sel = {"date": "2026-10-21", "run_dir": "runs/x", "selected_by": "Cain",
+           "episodes": [pick(0), pick(1), {**pick(2), "fallback_text": True}]}
+    with pytest.raises(RankedError):
+        report.validate(sel, "selected")
+    sel["episodes"][2]["why"] = "Strong exec pick; fallback text only, whisper pending."
+    report.validate(sel, "selected")
+
+
+def test_report_our_read_optional_and_interests():
+    d = copy.deepcopy(REPORT)
+    d["episodes"][0]["signal"][0].pop("our_read")
+    d["episodes"][0]["interests"] = "Early investor in Acme."
+    md = report.render(report.validate(d, "report"))
+    assert "- t [Jane Placeholder, [0:01:15](https://www.youtube.com/watch?v=a&t=75s)]\n" in md
+    assert "**Interests to note:** Early investor in Acme." in md

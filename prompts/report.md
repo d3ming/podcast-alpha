@@ -10,8 +10,11 @@ Shape:
 - `essential`: exactly 3 entries, the selected episodes in priority order. `headline` names the guest, their company and the
   2-3 most useful topics; `show`; `guests`: "host and guest, role".
 - `episodes`: exactly 3, one per essential entry, same order:
-  - `signal`: 3-4 bullets, the most investable points first. Each has `text` (what was said, in your words),
-    `speaker`, `timestamp` and `our_read` (one clause on why it matters: who benefits, who is at risk, what to watch).
+  - `headline`: this episode's distinctive news (the claim only this guest made), not a theme shared with the others.
+  - `signal`: 3-4 bullets, the most investable points first, specific to this episode. Each has `text` (what was
+    said, in your words), `speaker` and `timestamp`. Add `our_read` only when it adds a view (who benefits, who is at
+    risk, what to watch); omit it rather than restate the bullet.
+  - `interests` (optional): one line when the guest is talking their book (fund positions, investments, board seats).
   - `sections`: 3-6 numbered topics in episode order. `title` is short; `body` is one paragraph of 80-200 words in
     your own words. Add `claims` for specific numbers, guidance or named companies.
 
@@ -19,5 +22,5 @@ Rules:
 - Every `signal` bullet and claim needs `speaker` (name from the transcript, else role, else `unknown`) and
   `timestamp` in seconds from the nearest `[h:mm:ss]` line. Use `null` only when the episode has no transcript.
 - Paraphrase. Quote at most a short phrase. No claims that are not in the transcript.
-- Flag conflicts of interest the speaker mentions (investments, board seats) in a signal bullet.
+- Put conflicts of interest the speaker mentions (investments, board seats) in `interests`.
 - No holdings, weights or position data. No investment advice.

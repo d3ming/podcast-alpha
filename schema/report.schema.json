@@ -13,7 +13,7 @@
         "text": {"type": "string", "minLength": 1},
         "speaker": {"type": "string", "description": "name from the transcript, else role, else unknown"},
         "timestamp": {"type": ["integer", "null"], "minimum": 0, "description": "seconds; null only when the transcript has none"},
-        "our_read": {"type": "string"}
+        "our_read": {"type": "string", "description": "optional: only when it adds a view"}
       }
     }
   },
@@ -40,7 +40,8 @@
           "headline": {"type": "string"},
           "url": {"type": "string"},
           "signal": {"type": "array", "minItems": 3, "maxItems": 4,
-                     "items": {"allOf": [{"$ref": "#/$defs/cite"}, {"required": ["our_read"]}]}},
+                     "items": {"$ref": "#/$defs/cite"}},
+          "interests": {"type": "string", "description": "optional: guest's stakes when talking their book"},
           "sections": {
             "type": "array", "minItems": 1,
             "items": {"type": "object", "required": ["title", "body"], "additionalProperties": false,

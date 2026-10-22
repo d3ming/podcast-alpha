@@ -35,6 +35,7 @@ sources:
   - {id: mts, name: "MTS", tier: 1, rss: "https://anchor.fm/s/1110125e0/podcast/rss", topics: [ai]}
   - {id: supply-chained, name: "Supply Chained", tier: 1, rss: "https://anchor.fm/s/111a4f378/podcast/rss", topics: [semis]}
   - {id: squawk-pod, name: "Squawk Pod", tier: 1, rss: "https://feeds.simplecast.com/VHAcgaw_", topics: [markets]}
+  - {id: marketing-operators, name: "Marketing Operators", tier: 1, rss: "https://anchor.fm/s/f23bffe0/podcast/rss", topics: [ads, ecommerce]}
   - {id: big-technology, name: "Big Technology Podcast", tier: 1, rss: "https://feeds.megaphone.fm/LI3617121267", topics: [tech]}
   - {id: all-in, name: "All-In Podcast", tier: 1, rss: "https://rss.libsyn.com/shows/254861/destinations/1928300.xml", topics: [tech, investing]}
   - {id: the-circuit, name: "The Circuit", tier: 1, rss: "https://feeds.transistor.fm/the-circuit", topics: [semis]}

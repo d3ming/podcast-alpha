@@ -9,7 +9,7 @@ from podcast_alpha.ingest import Episode
 from podcast_alpha.store import Store
 
 NOW = datetime.now(timezone.utc)
-SEGS = [{"start": 0.0, "speaker": None, "text": "hi"}, {"start": 600.0, "speaker": None, "text": "bye"}]
+SEGS = [{"start": 0.0, "speaker": None, "text": "hi " + "a" * 3000}, {"start": 600.0, "speaker": None, "text": "bye " + "b" * 3000}]
 
 
 def ep(id, title, src):
@@ -86,7 +86,7 @@ def test_transcribe_run_is_resumable(tmp_path, monkeypatch):
     assert a["has_transcript"] and a["transcript_source"] == "whisper (2 min)" and b["whisper_error"] == "OSError"
     assert not c["has_transcript"] and m["whisper_minutes"] == 2.0 and not (run / "transcribe.lock").exists()
     md = (run / a["file"]).read_text()
-    assert "transcript_source: whisper (2 min)" in md and "[0:10:00] bye" in md and "_No transcript" not in md
+    assert "transcript_source: whisper (2 min)" in md and "[0:10:00] bye b" in md and "_No transcript" not in md
     assert Store(db).db.execute("SELECT transcript_source FROM episodes WHERE id='rss:a'").fetchone()[0] == "whisper (2 min)"
     transcribe_run(SimpleNamespace(run=str(run), minutes=600, per_episode=None, db=None, force=False))
     assert calls == ["https://a.mp3", "https://b.mp3"]

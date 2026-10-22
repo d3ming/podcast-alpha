@@ -23,8 +23,12 @@ Commands below use `pa` for `.venv/bin/python -m podcast_alpha.cli`.
 1. `pa daily --hours 48 --run-name <YYYY-MM-DD>`: people search first, then channels; queues `transcribe` in the
    background (log: `runs/<name>/transcribe.log`). Wait for `finished` in the log, or rerun
    `pa transcribe runs/<name>` (resumable; `--minutes` budget, default 600).
-2. Optional: `pa tmtb-import email.txt --run runs/<name>` (or `-` for stdin) with a pasted reference email body.
-   Writes `seeds.json`, `missed.json`, `missed.md`. Never scrape Substack.
+   Transcripts under 5 KB (`--min-transcript-chars`) are show descriptions: the manifest marks them
+   `fallback_text: true`, `transcript_source: fallback`, `has_transcript: false`, and `transcribe` whispers them
+   (people first). Episodes outside the window or flagged as replays/re-airs are excluded (`excluded` in the manifest).
+2. Recall check (when a reference email is available): `pa tmtb-import email.txt --run runs/<name>` (or `-` for stdin),
+   or pass `--tmtb email.txt` to `daily`. Writes `seeds.json`, `missed.json`, `missed.md`; fetch or whisper anything
+   important in `missed.md` before selecting. Paste or export the email body; never scrape Substack.
 3. Select exactly 3 strict picks (novel exec/investor signal, no recaps or news shows): follow `prompts/select.md`, write `runs/<name>/selected.json`, check with `pa check selected <file>`.
 4. Report: follow `prompts/report.md`, write `runs/<name>/report.json` (`schema/report.schema.json`).
 5. Render/publish: `pa report runs/<name>/report.json` writes `report.md`; with `NOTION_TOKEN` and a parent page

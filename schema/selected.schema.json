@@ -23,6 +23,8 @@
                      "properties": {"name": {"type": "string"}, "role": {"type": "string"}}}},
           "kind": {"enum": ["exec", "investor", "analyst", "other"]},
           "has_transcript": {"type": "boolean"},
+          "fallback_text": {"type": "boolean", "description": "manifest fallback_text: only a show description, no real transcript"},
+          "rerun": {"type": "boolean"},
           "why": {"type": "string", "maxLength": 300}
         }
       }

@@ -12,7 +12,8 @@ import yaml
 from .config import load_sources
 from .ingest import Episode, discover
 from .people import dedupe, discover_people, load_people
-from .transcribe import fmt_ts, get_transcript, title_match
+from .ingest import in_window, is_rerun
+from .transcribe import MIN_TRANSCRIPT_CHARS, fmt_ts, get_transcript, is_fallback, title_match, transcript_chars
 from .whisper import Budget
 
 
@@ -46,15 +47,17 @@ def ep_from_dict(d: dict) -> tuple[Episode, list | None, str | None]:
     return Episode(**{**d, "published_at": datetime.fromisoformat(d["published_at"])}), segs, tsrc
 
 
-def write_episode(run_dir: Path, ep: Episode, segs, tsrc) -> dict:
+def write_episode(run_dir: Path, ep: Episode, segs, tsrc, min_chars: int = MIN_TRANSCRIPT_CHARS) -> dict:
+    fallback = is_fallback(segs, min_chars)
     name = f"{ep.published_at.date()}-{slug(ep.source_id, 40)}-{slug(ep.title)}.md"
     (run_dir / name).write_text(episode_md(ep, segs, tsrc))
     print(f"[episode] {ep.source_id}: transcript={tsrc or 'none'}")
     return {"episode_id": ep.id, "file": name, "title": ep.title, "source": ep.source_name, "source_tag": ep.source_id,
             "via": ep.via or "channel", "tier": ep.tier, "published": ep.published_at.date().isoformat(), "url": ep.url,
-            "transcript_source": tsrc, "has_transcript": bool(segs),
-            "transcript_minutes": round(segs[-1]["start"] / 60) if segs else 0, "audio_url": ep.audio_url,
-            "youtube_id": ep.youtube_id}
+            "transcript_source": "fallback" if fallback else tsrc, "has_transcript": bool(segs) and not fallback,
+            "fallback_text": fallback, "fallback_from": tsrc if fallback else None, "transcript_chars": transcript_chars(segs),
+            "transcript_minutes": round(segs[-1]["start"] / 60) if segs and not fallback else 0, "audio_url": ep.audio_url,
+            "youtube_id": ep.youtube_id, "rerun": is_rerun(ep.title, ep.description)}
 
 
 def load_manifest(run_dir: Path, now: datetime, days) -> dict:
@@ -143,6 +146,15 @@ def fetch(args) -> Path:
         eps = [e for e in discover(sources, now, args.days, t3_cap, per_source=args.per_source)
                if not any(p.id == e.id or title_match(p.title, e.title) >= 0.8 for p in person_eps)]
     eps += person_eps
+    manifest["excluded"] = []
+    keep_reruns = getattr(args, "include_reruns", False)
+    for e in list(eps):
+        why = "outside window" if not in_window(e.published_at, now, args.days) else (
+            "rerun" if is_rerun(e.title, e.description) and not keep_reruns else None)
+        if why:
+            eps.remove(e)
+            manifest["excluded"].append({"episode_id": e.id, "title": e.title, "published": e.published_at.isoformat(), "why": why})
+            print(f"[window] skip {why}: {e.title[:60]}")
     budget = Budget(args.whisper_minutes or 0, args.whisper_per_episode)
     eps.sort(key=lambda e: (e.source_id.startswith("person:") != people_first, e.tier, -e.published_at.timestamp()))
     for ep in eps:
@@ -152,7 +164,7 @@ def fetch(args) -> Path:
             print(f"[dedupe] skip {ep.id}")
             continue
         segs, tsrc = get_transcript(ep, budget)
-        manifest["episodes"].append(write_episode(run_dir, ep, segs, tsrc))
+        manifest["episodes"].append(write_episode(run_dir, ep, segs, tsrc, getattr(args, "min_transcript_chars", MIN_TRANSCRIPT_CHARS)))
         store.add_episode(ep, tsrc)
     manifest["whisper_minutes"] = round(budget.used / 60, 1)
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
@@ -167,28 +179,38 @@ def transcribe_run(args) -> Path:
     run_dir = Path(args.run)
     path = run_dir / "manifest.json"
     budget, store = Budget(args.minutes, args.per_episode), Store(args.db) if args.db else None
+    retry, reruns = getattr(args, "retry_errors", False), getattr(args, "include_reruns", False)
+    min_chars, tried = getattr(args, "min_transcript_chars", MIN_TRANSCRIPT_CHARS), set()
     lock = run_dir / "transcribe.lock"
     if lock.exists() and not args.force:
         raise SystemExit(f"[transcribe] {lock} exists; another job may be running (use --force)")
     lock.write_text(str(os.getpid()))
     try:
+        save(path, refresh_flags(json.loads(path.read_text()), run_dir, min_chars))
         while True:
             manifest = json.loads(path.read_text())
-            todo = [e for e in manifest["episodes"] if not e["has_transcript"] and e.get("audio_url") and not e.get("whisper_error")]
+            todo = [e for e in manifest["episodes"] if not e["has_transcript"] and e.get("audio_url") 
+                    and e["episode_id"] not in tried and (retry or not e.get("whisper_error"))
+                    and not (e.get("rerun") and not reruns)]
             todo.sort(key=lambda e: not e.get("source_tag", "").startswith("person:"))
             if not todo or budget.take() < 60:
                 break
             e = todo[0]
+            tried.add(e["episode_id"])
+            e.pop("whisper_error", None)
             log(f"start {e['episode_id']} ({len(todo)} left, {round(budget.left / 60)} min budget) {e['title'][:60]}")
             try:
                 segs, used = transcribe(e["audio_url"], budget)
                 tsrc = f"whisper ({round(used / 60)} min)"
             except Exception as exc:
                 segs, tsrc, e["whisper_error"] = None, None, type(exc).__name__
+            if segs and is_fallback(segs, min_chars):
+                segs, e["whisper_error"] = None, "short"
             if segs:
                 md = run_dir / e["file"]
                 md.write_text(with_transcript(md.read_text(), segs, tsrc))
-                e.update(has_transcript=True, transcript_source=tsrc, transcript_minutes=round(segs[-1]["start"] / 60))
+                e.update(has_transcript=True, transcript_source=tsrc, transcript_minutes=round(segs[-1]["start"] / 60),
+                         fallback_text=False, transcript_chars=transcript_chars(segs))
                 if store:
                     store.set_transcript(e["episode_id"], tsrc)
             elif not e.get("whisper_error"):
@@ -202,6 +224,26 @@ def transcribe_run(args) -> Path:
         lock.unlink(missing_ok=True)
     log(f"finished, {round(budget.used / 60, 1)} min used")
     return run_dir
+
+
+def save(path: Path, manifest: dict) -> None:
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+    tmp.replace(path)
+
+
+def refresh_flags(manifest: dict, run_dir: Path, min_chars: int) -> dict:
+    for e in manifest["episodes"]:
+        md = run_dir / e["file"]
+        head, _, body = (md.read_text() if md.exists() else "").partition("## Transcript")
+        text = re.sub(r"^\[[\d:]+\]\s*", "", body, flags=re.M).strip()
+        e.setdefault("rerun", is_rerun(e["title"], head.partition("## Description")[2]))
+        if e["has_transcript"] and len(text) < min_chars:
+            e.update(has_transcript=False, fallback_text=True, fallback_from=e["transcript_source"],
+                     transcript_source="fallback", transcript_chars=len(text), transcript_minutes=0)
+            e.pop("whisper_error", None)
+            log(f"fallback {e['episode_id']} ({len(text)} chars) {e['title'][:60]}")
+    return manifest
 
 
 def log(msg: str) -> None:
@@ -231,6 +273,10 @@ def queue_transcribe(run_dir: Path, minutes: float, db: str | None) -> int:
 def daily(args) -> Path:
     args.days, args.people_first, args.youtube_only = args.hours / 24, True, False
     run_dir = fetch(args)
+    if args.tmtb:
+        from .tmtb import run as tmtb_run
+
+        tmtb_run(Path(args.tmtb).read_text(), run_dir, days=max(args.days, 2))
     if args.no_transcribe:
         print(f"[daily] transcribe later: podcast-alpha transcribe {run_dir}")
     else:

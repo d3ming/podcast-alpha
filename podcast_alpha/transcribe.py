@@ -59,9 +59,11 @@ def parse_json(raw: str) -> list[dict]:
 def from_rss_tag(links: list[dict]) -> list[dict] | None:
     import requests
 
+    from .ingest import UA
+
     for link in links or []:
         try:
-            r = requests.get(link["url"], timeout=30)
+            r = requests.get(link["url"], timeout=30, headers=UA)
             r.raise_for_status()
         except requests.RequestException:
             continue
@@ -111,6 +113,17 @@ def find_youtube_mirror(source_name: str, title: str) -> str | None:
 
 
 DEFAULT_METHODS = ["podcast_transcript", "youtube_captions", "youtube_mirror", "whisper"]
+
+
+MIN_TRANSCRIPT_CHARS = 5000
+
+
+def transcript_chars(segs: list[dict] | None) -> int:
+    return sum(len(s["text"]) + 1 for s in segs or [])
+
+
+def is_fallback(segs: list[dict] | None, min_chars: int = MIN_TRANSCRIPT_CHARS) -> bool:
+    return bool(segs) and transcript_chars(segs) < min_chars
 
 
 def get_transcript(ep, budget=None) -> tuple[list[dict] | None, str | None]:

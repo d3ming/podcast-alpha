@@ -19,6 +19,10 @@ def validate(data: dict, kind: str) -> dict:
     text = json.dumps(data).lower()
     if any(f'"{w}' in text for w in FORBIDDEN):
         raise RankedError(f"{kind}: holdings-like fields are not allowed")
+    if kind == "selected":
+        bad = [e["episode_id"] for e in data["episodes"] if e.get("fallback_text") and "fallback" not in e["why"].lower()]
+        if bad:
+            raise RankedError(f"selected: fallback_text picks must say 'fallback' in why: {bad}")
     if kind == "report":
         ids = [e["episode_id"] for e in data["essential"]]
         missing = [e["episode_id"] for e in data["episodes"] if e["episode_id"] not in ids]
@@ -40,6 +44,8 @@ def render(data: dict) -> str:
     for ep in data["episodes"]:
         lines += ["", "---", "", f"## [{ep['headline']}]({ep['url']})", "", "### THE SIGNAL", ""]
         lines += [cite(c, ep["url"]) for c in ep["signal"]]
+        if ep.get("interests"):
+            lines += ["", f"**Interests to note:** {ep['interests']}"]
         for n, s in enumerate(ep["sections"], 1):
             lines += ["", f"### {n:02d} {s['title']}", "", s["body"]]
             lines += [cite(c, ep["url"]) for c in s.get("claims", [])]

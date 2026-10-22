@@ -80,6 +80,8 @@ def add_fetch_args(f) -> None:
     f.add_argument("--whisper-minutes", type=float, help="whisper minutes inside fetch (default 0 on the box, 600 with --youtube-only)")
     f.add_argument("--whisper-per-episode", type=float, help="cap per episode in minutes (default: whole episode)")
     f.add_argument("--refetch", action="store_true", help="include episodes already in the dedupe DB")
+    f.add_argument("--min-transcript-chars", type=int, default=5000, help="shorter text is flagged fallback, not a transcript")
+    f.add_argument("--include-reruns", action="store_true", help="keep replays and re-airs")
 
 
 def main(argv=None):
@@ -96,6 +98,9 @@ def main(argv=None):
     t.add_argument("--per-episode", type=float)
     t.add_argument("--db", help="also record transcript_source in this SQLite DB")
     t.add_argument("--force", action="store_true", help="ignore a stale transcribe.lock")
+    t.add_argument("--retry-errors", action="store_true", help="retry episodes that failed before")
+    t.add_argument("--include-reruns", action="store_true")
+    t.add_argument("--min-transcript-chars", type=int, default=5000)
     m = sub.add_parser("merge", help="merge a --youtube-only output dir into a run folder")
     m.add_argument("dir")
     m.add_argument("--into", required=True)
@@ -105,6 +110,7 @@ def main(argv=None):
     d.add_argument("--hours", type=float, default=48)
     d.add_argument("--minutes", type=float, default=600, help="whisper budget for the queued transcribe")
     d.add_argument("--no-transcribe", action="store_true")
+    d.add_argument("--tmtb", help="reference email body to run tmtb-import as a recall check after fetch")
     c = sub.add_parser("check", help="validate selected.json or report.json")
     c.add_argument("kind", choices=["selected", "report"])
     c.add_argument("file")
