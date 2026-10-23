@@ -58,3 +58,4 @@ sources:
   - {id: deep-view, name: "The Deep View: Conversations", tier: 2, rss: "https://feeds.transistor.fm/tdv", topics: [ai]}
   - {id: pioneers-of-ai, name: "Pioneers of AI", tier: 2, rss: "https://rss.art19.com/pioneers-of-ai", topics: [ai]}
   - {id: tbpn, name: TBPN, tier: 1, rss: "https://feeds.transistor.fm/technology-brother", itunes_id: 1772360235, topics: [tech, ai]}
+  - {id: plain-english, name: "Plain English with Derek Thompson", tier: 1, rss: "https://feeds.megaphone.fm/plain-english", itunes_id: 1594471023, youtube_channel_id: UCoOUW7SiXzLbc_O3nSDOBYA, topics: [tech, ai, economics]}
