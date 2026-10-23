@@ -1,0 +1,14 @@
+Today’s Essential Episodes:
+NVIDIA CEO Jensen Huang on Neocloud Financing, Why He Waves Off Anthropic Slowdown Fears, China and the Substrate Bottleneck
+CNBC’s Morning Call: Arjun Kharpal interviews Jensen Huang, founder and CEO of NVIDIA, at GTC Berlin
+Inside Intel’s Fabs: CTO Pushkar Ranade on Why Tool Supply Caps Leading-Edge Growth, Plus High-NA EUV, 14A and Chips in 2045
+Dwarkesh Podcast, with Dwarkesh Patel, Intel CTO Pushkar Ranade, process-development lead Chris Auth, Jack Kavalieros, Tyler Osborne and Ken Fisher
+CrowdStrike CEO George Kurtz on the ‘Agent State’ as the New Apex Predator, 27-Second Breakouts and the Safemind Lab Built With NVIDIA
+No Priors, with Sarah Guo, Elad Gil and George Kurtz, president and CEO of CrowdStrike
+IBM’s Arvind Krishna and Palo Alto’s Nikesh Arora on Quantum’s 2030 Threat to Encryption, Open-Weight Models and SaaS Consolidation
+All-In Podcast, with Arvind Krishna, chairman and CEO of IBM, and Nikesh Arora, chairman and CEO of Palo Alto Networks
+Palo Alto Networks CEO Nikesh Arora on the PHP2Shell Flaw, AI-Found Vulnerabilities, Personal Agents and Insatiable Compute Demand
+TBPN, with Jordi Hays and Nikesh Arora, chairman and CEO of Palo Alto Networks
+Bill Gates on 20 Years of ‘Tumultuous’ AI Disruption, Why Labs Can’t Police Themselves and a ‘Police Layer’ for Alignment
+Decoder with Nilay Patel, with Bill Gates, co-founder of Microsoft and chair of the Gates Foundation
+Produced by Ethmos: AI-assisted summaries.

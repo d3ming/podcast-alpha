@@ -26,24 +26,58 @@ def split_people(tail: str) -> list[dict]:
     return out
 
 
+HEAD_NAME = re.compile(r"\b([A-Z][a-z][\w'’.-]*\s(?:[A-Z]\.\s)?[A-Z][a-z][\w'’.-]+)\b")
+NOT_NAME = re.compile(r"^(The|Why|How|What|On|Inside|Plus|Morning|Call|Podcast|Show|Founder|CEO|CTO)\b")
+
+
+def headline_guests(*texts: str) -> list[dict]:
+    """Fallback: person-like name that also appears in the headline."""
+    head = texts[0]
+    for t in texts[1:] + (head,):
+        for m in HEAD_NAME.finditer(t):
+            name = m.group(1)
+            if name in head and not NOT_NAME.match(name) and not any(w in name for w in ("’s", "'s")):
+                return [{"name": name, "role": ""}]
+    return []
+
+
+def _seed(n: int, head: str, show_line: str, tail: str) -> dict:
+    people = split_people(tail) if tail else []
+    guests = [p for p in people if p["name"].split()[-1] in head] or people[-1:]
+    for g in guests:  # 'Intel CTO Pushkar Ranade' -> 'Pushkar Ranade' when the short name is in the headline
+        w = g["name"].split()
+        if len(w) > 2 and " ".join(w[-2:]) in head:
+            g["name"] = " ".join(w[-2:])
+    if not guests:
+        guests = headline_guests(head, show_line)
+    return {"n": n, "headline": head.strip(), "show": show_line.strip(), "people": people, "guests": guests}
+
+
 def parse_email(text: str) -> list[dict]:
-    lines, seeds, on = text.splitlines(), [], False
+    """Numbered ('1. Headline, with X') or unnumbered two-line (headline / show, with X) format."""
+    lines, on, body = text.splitlines(), False, []
     for line in lines:
-        if START.search(line):
-            on = True
-            continue
         if not on:
+            if START.search(line):
+                on = True
             continue
-        if STOP.match(line.strip()) and seeds:
+        t = line.strip()
+        if STOP.match(t) and body:
             break
-        m = ITEM.match(line)
-        if not m:
-            continue
-        head, _, tail = m.group(2).rpartition(", with ")
-        head = head or m.group(2)
-        people = split_people(tail)
-        guests = [p for p in people if p["name"].split()[-1] in head] or people[-1:]
-        seeds.append({"n": int(m.group(1)), "headline": head.strip(), "people": people, "guests": guests})
+        if t:
+            body.append(t)
+    numbered = [ITEM.match(t) for t in body if ITEM.match(t)]
+    if numbered:
+        seeds = []
+        for m in numbered:
+            head, _, tail = m.group(2).rpartition(", with ")
+            seeds.append(_seed(int(m.group(1)), head or m.group(2), "", tail))
+        return seeds
+    seeds = []
+    for i in range(0, len(body) - 1, 2):
+        head, show = body[i], body[i + 1]
+        show_name, _, tail = show.partition(", with ")
+        seeds.append(_seed(len(seeds) + 1, head, show_name, tail))
     return seeds
 
 
@@ -96,6 +130,8 @@ def run(text: str, run_dir: Path, days: float = 4, fetch_json=itunes_json, now: 
     manifest_path = run_dir / "manifest.json"
     manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {"episodes": []}
     seeds = parse_email(text)
+    if not seeds:
+        raise SystemExit("[tmtb] ERROR: parsed 0 Essential Episodes seeds; email format changed? Not writing missed.md")
     for s in seeds:
         s["covered_by"] = covered(s, manifest)
         s["candidates"] = [] if s["covered_by"] else search(s, now, days, fetch_json)
