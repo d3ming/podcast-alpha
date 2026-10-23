@@ -59,7 +59,8 @@ def write_episode(run_dir: Path, ep: Episode, segs, tsrc, min_chars: int = MIN_T
             "transcript_source": "fallback" if fallback else tsrc, "has_transcript": bool(segs) and not fallback,
             "fallback_text": fallback, "fallback_from": tsrc if fallback else None, "transcript_chars": transcript_chars(segs),
             "transcript_minutes": round(segs[-1]["start"] / 60) if segs and not fallback else 0, "audio_url": ep.audio_url,
-            "youtube_id": ep.youtube_id, "rerun": is_rerun(ep.title, ep.description)}
+            "youtube_id": ep.youtube_id, "rerun": is_rerun(ep.title, ep.description), "duration": ep.duration,
+            "description": re.sub(r"<[^>]+>", " ", ep.description or "")[:1500]}
 
 
 def load_manifest(run_dir: Path, now: datetime, days) -> dict:
@@ -181,9 +182,25 @@ def fetch(args) -> Path:
     return run_dir
 
 
+def record_failure(run_dir: Path, manifest: dict, e: dict, exc: Exception) -> dict:
+    """Append to manifest['failures'] and transcribe.failed.log (one JSON line per failure)."""
+    from .timing import now_iso
+    from .whisper import DownloadError
+
+    rec = {"at": now_iso(), "episode_id": e["episode_id"], "title": e.get("title", "")[:120], "stage": "transcribe",
+           "error": str(exc) if isinstance(exc, DownloadError) else f"{type(exc).__name__}: {str(exc)[:200]}",
+           "attempts": getattr(exc, "attempts", 1), "errors": getattr(exc, "errors", [type(exc).__name__]),
+           "transient": getattr(exc, "transient", None)}
+    manifest.setdefault("failures", []).append(rec)
+    with open(run_dir / "transcribe.failed.log", "a") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    log(f"FAILED {e['episode_id']} after {rec['attempts']} attempt(s): {rec['error']}")
+    return rec
+
+
 def transcribe_run(args) -> Path:
     from .store import Store
-    from .whisper import transcribe
+    from .whisper import DownloadError, transcribe
 
     run_dir = Path(args.run)
     path = run_dir / "manifest.json"
@@ -213,7 +230,7 @@ def transcribe_run(args) -> Path:
             from .triage import triage
 
             people = load_people(args.people) if getattr(args, "people", None) and Path(args.people).exists() else []
-            picked = triage(manifest, people, top, is_news=is_news)
+            picked = triage(manifest, people, top, is_news=is_news, run_dir=run_dir)
             log(f"triage: whisper {len(picked)} of {manifest['triage']['candidates']} (top {top} + core people)")
         save(path, manifest)
         while True:
@@ -241,7 +258,9 @@ def transcribe_run(args) -> Path:
                     tsrc = f"whisper ({round(used / 60)} min)"
                     log(f"whispered {round(used / 60)} audio min in {round(time.monotonic() - t0)} s wall")
             except Exception as exc:
-                segs, tsrc, e["whisper_error"] = None, None, type(exc).__name__
+                segs, tsrc, used = None, None, 0.0
+                e["whisper_error"] = str(exc) if isinstance(exc, DownloadError) else type(exc).__name__
+                record_failure(run_dir, manifest, e, exc)
             if segs and is_fallback(segs, min_chars):
                 segs, e["whisper_error"] = None, "short"
             if segs:

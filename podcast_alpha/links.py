@@ -115,12 +115,29 @@ def yt_ddg(ep: dict, fetch=_text) -> str | None:
     return None
 
 
+YT_URL = re.compile(r"https?://(?:www\.|m\.)?(?:youtube\.com/(?:watch\?[^\s\"'<>]*v=|live/|shorts/)|youtu\.be/)[\w-]{11}[^\s\"'<>]*")
+
+
+def yt_show_notes(ep: dict, fetch=_text) -> str | None:
+    """YouTube links the publisher put in the feed description/show notes; oEmbed-verified (notes often link other eps)."""
+    seen = []
+    for u in YT_URL.findall(ep.get("description") or ""):
+        if (vid := yt_id(u)) and vid not in seen:
+            seen.append(vid)
+    for vid in seen[:5]:
+        if (u := yt_verify(ep, f"https://www.youtube.com/watch?v={vid}", fetch=fetch)):
+            return u
+    return None
+
+
 def youtube(ep: dict, channel_id: str | None = None, fetch=_text) -> str | None:
+    """Order: known id, agent-supplied url, feed show notes, channel RSS, web search."""
     if ep.get("youtube_id"):
         return f"https://www.youtube.com/watch?v={ep['youtube_id']}"
     if ep.get("youtube_url") and (u := yt_verify(ep, ep["youtube_url"], ep.get("youtube_published"), fetch)):
         return u
-    for step in ((lambda: yt_channel_rss(ep, channel_id, fetch)) if channel_id else None, lambda: yt_ddg(ep, fetch)):
+    for step in (lambda: yt_show_notes(ep, fetch), (lambda: yt_channel_rss(ep, channel_id, fetch)) if channel_id else None,
+                 lambda: yt_ddg(ep, fetch)):
         if step:
             try:
                 if (u := step()):
@@ -194,6 +211,9 @@ def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text) -> d
     for e in sel["episodes"]:
         m = by_id.get(e["episode_id"], {})
         ep = {**m, **e, "youtube_id": e.get("youtube_id") or m.get("youtube_id")}
+        if not ep.get("description") and m.get("file") and (run_dir / m["file"]).exists():  # older manifests
+            md = re.search(r"## Description\n\n(.*?)(?:\n## |\Z)", (run_dir / m["file"]).read_text(), re.S)
+            ep["description"] = md.group(1) if md else ""
         src = srcs.get((e.get("show") or "").lower(), {})
         yt = youtube(ep, src.get("youtube_channel_id"), fetch)
         lu = e.get("listen_url") if e.get("listen_url") and not bad_url(e["listen_url"]) and not yt_id(e["listen_url"]) else None

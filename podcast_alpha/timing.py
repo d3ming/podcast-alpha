@@ -28,7 +28,20 @@ def apply(manifest: dict, stage: str, event: str, at: str | None = None) -> dict
     if starts and ends:
         t["e2e"] = {"start": min(starts), "end": max(ends),
                     "seconds": round((datetime.fromisoformat(max(ends)) - datetime.fromisoformat(min(starts))).total_seconds())}
+        active, idle = split(t)
+        t["e2e"].update(active_seconds=active, idle_seconds=idle)
     return manifest
+
+
+def split(t: dict) -> tuple[int | None, int | None]:
+    """(active seconds = sum of stage durations, idle seconds = select.start - transcribe.end, never negative)."""
+    secs = [t[s]["seconds"] for s in STAGES if isinstance(t.get(s), dict) and t[s].get("seconds") is not None]
+    active = sum(secs) if secs else None
+    idle = None
+    tr, se = t.get("transcribe", {}), t.get("select", {})
+    if tr.get("end") and se.get("start"):
+        idle = max(0, round((datetime.fromisoformat(se["start"]) - datetime.fromisoformat(tr["end"])).total_seconds()))
+    return active, idle
 
 
 def mark(run_dir: Path, stage: str, event: str, at: str | None = None) -> dict:
@@ -56,10 +69,12 @@ def stats(runs: Path) -> str:
             continue
         t, rec = m.get("timing", {}), m.get("recall") or {}
         eps = m.get("episodes", [])
-        rows.append([p.parent.name] + [fmt(t.get(s, {}).get("seconds")) for s in STAGES] + [fmt(t.get("e2e", {}).get("seconds")),
+        active, idle = split(t)
+        rows.append([p.parent.name] + [fmt(t.get(s, {}).get("seconds")) for s in STAGES] + [fmt(active), fmt(idle),
+                    fmt(t.get("e2e", {}).get("seconds")),
                     f"{sum(1 for e in eps if e.get('has_transcript'))}/{len(eps)}",
                     f"{rec['hits']}/{rec['tmtb']} ({rec['recall']:.0%})" if rec.get("tmtb") else "-"])
-    head = ["run", *STAGES, "e2e", "transcribed", "recall"]
+    head = ["run", *STAGES, "active", "idle", "wall", "transcribed", "recall"]
     widths = [max(len(str(r[i])) for r in [head] + rows) for i in range(len(head))]
     line = lambda r: "  ".join(str(c).ljust(w) for c, w in zip(r, widths))
     return "\n".join([line(head), line(["-" * w for w in widths])] + [line(r) for r in rows]) + "\n"

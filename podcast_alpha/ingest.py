@@ -29,6 +29,7 @@ class Episode:
     via: str = ""
     methods: list | None = None
     feed_url: str | None = None
+    duration: int | None = None  # seconds, when the feed/search reports it
 
 
 def canonical_id(guid: str | None, youtube_id: str | None, link: str | None) -> str:
@@ -58,6 +59,20 @@ RERUN = re.compile(r"\b(replay|re-?air(ed|ing)?|rebroadcast|encore|rerun|best of
 
 def is_rerun(title: str, description: str = "") -> bool:
     return bool(RERUN.search(title or "") or RERUN.search((description or "")[:400]))
+
+
+def parse_duration(v) -> int | None:
+    """itunes:duration: seconds, MM:SS or HH:MM:SS."""
+    try:
+        parts = [int(float(x)) for x in str(v).strip().split(":")]
+    except (TypeError, ValueError):
+        return None
+    if not parts or len(parts) > 3:
+        return None
+    sec = 0
+    for x in parts:
+        sec = sec * 60 + x
+    return sec or None
 
 
 def in_window(dt: datetime, now: datetime, days: int) -> bool:
@@ -107,7 +122,7 @@ def from_rss(src: Source, now: datetime, days: int, parsed=None) -> list[Episode
             source_id=src.id, source_name=src.name, tier=src.tier,
             title=e.get("title", "").strip(), url=page_url(e, audio, (feed.get("feed") or {}).get("link")),
             published_at=dt, transcript_urls=transcript_links(e), audio_url=audio,
-            description=e.get("summary", "")[:2000],
+            description=e.get("summary", "")[:2000], duration=parse_duration(e.get("itunes_duration")),
         ))
     return out
 
@@ -142,6 +157,7 @@ def from_youtube(src: Source, now: datetime, days: int, max_items: int = 8) -> l
             id=canonical_id(None, v["id"], None), source_id=src.id, source_name=src.name, tier=src.tier,
             title=info.get("title", ""), url=f"https://www.youtube.com/watch?v={v['id']}",
             published_at=dt, youtube_id=v["id"], description=(info.get("description") or "")[:2000],
+            duration=int(info["duration"]) if info.get("duration") else None,
         ))
     return out
 

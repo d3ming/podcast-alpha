@@ -58,24 +58,71 @@ def transcribe_file(path: str, budget: Budget) -> tuple[list[dict] | None, float
     return out or None, used
 
 
-def transcribe(audio_url: str | None, budget: Budget | None) -> tuple[list[dict] | None, float]:
-    if not audio_url or not budget or budget.take() < 60:
-        return None, 0.0
+RETRIES = int(os.environ.get("PA_DOWNLOAD_RETRIES", "3"))  # extra attempts after the first
+BACKOFF = float(os.environ.get("PA_DOWNLOAD_BACKOFF", "10"))  # seconds; doubles each attempt
+
+
+class DownloadError(Exception):
+    """Download failed after retries; .attempts and .errors describe each try."""
+
+    def __init__(self, msg: str, attempts: int, errors: list[str], transient: bool):
+        super().__init__(msg)
+        self.attempts, self.errors, self.transient = attempts, errors, transient
+
+
+def describe(exc: Exception) -> str:
+    code = getattr(getattr(exc, "response", None), "status_code", None)
+    return f"{type(exc).__name__} {code}" if code else type(exc).__name__
+
+
+def transient(exc: Exception) -> bool:
+    """Retry 5xx, 429, timeouts and connection drops; never 4xx like 404/403."""
+    import requests
+
+    code = getattr(getattr(exc, "response", None), "status_code", None)
+    if isinstance(exc, requests.HTTPError):
+        return code is not None and (code >= 500 or code == 429)
+    return isinstance(exc, (requests.Timeout, requests.ConnectionError, requests.exceptions.ChunkedEncodingError,
+                            TimeoutError, ConnectionError))
+
+
+def download(audio_url: str, dest, retries: int | None = None, backoff: float | None = None, sleep=None, get=None) -> int:
+    """Stream audio_url into the open file dest with retry+exponential backoff. Returns attempts used."""
+    import time
+
     import requests
 
     from .ingest import UA
 
-    import time
+    retries = RETRIES if retries is None else retries
+    backoff = BACKOFF if backoff is None else backoff
+    sleep, get = sleep or time.sleep, get or requests.get
+    errors = []
+    for attempt in range(1, retries + 2):
+        dest.seek(0), dest.truncate()
+        deadline = time.monotonic() + DOWNLOAD_SECONDS
+        try:
+            with get(audio_url, stream=True, timeout=60, headers=UA) as r:
+                r.raise_for_status()
+                for chunk in r.iter_content(1 << 20):
+                    dest.write(chunk)
+                    if time.monotonic() > deadline:
+                        raise TimeoutError(f"download over {DOWNLOAD_SECONDS}s")
+            dest.flush()
+            return attempt
+        except Exception as exc:
+            errors.append(describe(exc))
+            if not transient(exc) or attempt > retries:
+                raise DownloadError(errors[-1], attempt, errors, transient(exc)) from exc
+            sleep(backoff * 2 ** (attempt - 1))
+    raise AssertionError("unreachable")
 
-    deadline = time.monotonic() + DOWNLOAD_SECONDS
+
+def transcribe(audio_url: str | None, budget: Budget | None) -> tuple[list[dict] | None, float]:
+    if not audio_url or not budget or budget.take() < 60:
+        return None, 0.0
     with tempfile.NamedTemporaryFile(suffix=".audio") as f:
-        with requests.get(audio_url, stream=True, timeout=60, headers=UA) as r:
-            r.raise_for_status()
-            for chunk in r.iter_content(1 << 20):
-                f.write(chunk)
-                if time.monotonic() > deadline:
-                    raise TimeoutError(f"download over {DOWNLOAD_SECONDS}s")
-        f.flush()
+        download(audio_url, f)
         return transcribe_file(f.name, budget)
 
 

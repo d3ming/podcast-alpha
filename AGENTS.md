@@ -37,7 +37,7 @@ has no faster-whisper). `daily` checks this up front and pins the queued `transc
    previous day's run: `podcast-alpha tmtb-import email.txt` (defaults to `--date yesterday`, i.e. `runs/<yesterday>`;
    `--run runs/<name>` or `--date YYYY-MM-DD` to override; `-` reads stdin). Writes `seeds.json`, `missed.json`, `missed.md`; fetch or whisper anything
    important in `missed.md` before selecting. Paste or export the email body; never scrape Substack.
-3. Select exactly 3 strict picks (novel exec/investor signal, no recaps or news shows): follow `prompts/select.md`, write `runs/<name>/selected.json`, check with `podcast-alpha check selected <file>`.
+3. Select exactly 3 strict picks (novel exec/investor signal, no recaps or news shows): follow `prompts/select.md`, write `runs/<name>/selected.json`, check with `podcast-alpha check <file>` (schema inferred from selected*.json / report*.json).
 3b. Links: find each pick's YouTube video by web search and set `youtube_url`/`youtube_published` in `selected.json` only on a
    title-or-guest + date match (never guess), then run `podcast-alpha links runs/<name>` (verifies via oEmbed, adds Apple/
    Spotify/episode-page `listen_url`; see `prompts/report.md`). yt-dlp search from the Mac is manual-only.
@@ -56,8 +56,9 @@ The weekly ranking path (`fetch`, `prompts/rank.md`, `publish`) and the Mac YouT
 
 ## Timing, triage, recall
 - Timings: `fetch` and `transcribe` record their own start/end in `manifest.json` (`timing`). Agent steps call
-  `podcast-alpha mark select|report|publish start|end --run runs/<name>`. `timing.e2e` spans first start to last end.
-- `podcast-alpha stats` prints a trend table across runs: per-stage durations, e2e, transcribed/total, recall.
+  `podcast-alpha mark select|report|publish start|end --run runs/<name>`. `timing.e2e` spans first start to last end (wall); `active_seconds` sums stages, `idle_seconds` is transcribe end → select start.
+- `podcast-alpha stats` prints a trend table across runs: per-stage durations, active, idle (transcribe end → select start), wall, transcribed/total, recall.
+- Download failures retry 5xx/429/timeouts with backoff (PA_DOWNLOAD_RETRIES, PA_DOWNLOAD_BACKOFF); 4xx is final. Each failure lands in `manifest.failures` and `transcribe.failed.log`.
 - Triage: `transcribe` (and `daily`, which queues it) scores untranscribed episodes on metadata (people.yaml person
   search/name match, tier, named guest, title keywords, recency, news and rerun penalties), stores `triage`
   {score, reasons, rank, whisper} per episode and whispers only the top `--top` (default 8) plus every core-person

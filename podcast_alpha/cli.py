@@ -33,11 +33,28 @@ def publish(args) -> None:
         print("[notion] no NOTION_TOKEN; publish the markdown with the Notion connector")
 
 
+KINDS = ("selected", "report")
+
+
+def infer_kind(path: str) -> str:
+    name = Path(path).name.lower()
+    for k in KINDS:
+        if name.startswith(k):
+            return k
+    sys.exit(f"[check] cannot infer schema from {name!r}; pass one of {', '.join(KINDS)} (e.g. check selected {path})")
+
+
 def check(args) -> None:
     from . import ranked, report
 
+    kind = args.kind
+    if args.file is None:  # one positional given: it is the file
+        kind, args.file = None, args.kind
+    kind = kind or infer_kind(args.file)
+    if kind not in KINDS:
+        sys.exit(f"[check] unknown schema {kind!r}; use one of {', '.join(KINDS)}")
     try:
-        report.validate(json.loads(Path(args.file).read_text()), args.kind)
+        report.validate(json.loads(Path(args.file).read_text()), kind)
     except ranked.RankedError as exc:
         sys.exit(f"[check] invalid: {exc}")
     print(f"[check] {args.file} ok")
@@ -153,8 +170,8 @@ def main(argv=None):
     d.add_argument("--top", type=int, default=8, help="queued transcribe whispers only the top N by triage score, plus core people")
     d.add_argument("--tmtb", help="reference email body to run tmtb-import as a recall check after fetch")
     c = sub.add_parser("check", help="validate selected.json or report.json")
-    c.add_argument("kind", choices=["selected", "report"])
-    c.add_argument("file")
+    c.add_argument("kind", help="selected|report, or just the file (schema inferred from selected*.json / report*.json)")
+    c.add_argument("file", nargs="?")
     r = sub.add_parser("report", help="validate report.json, render report.md, publish to Notion if configured")
     r.add_argument("report")
     r.add_argument("--out")

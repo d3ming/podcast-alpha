@@ -112,7 +112,8 @@ def from_youtube_search(person: Person, now: datetime, days: int, limit: int = 3
             continue
         out.append(_ep(person, id=canonical_id(None, r["id"], None), show=info.get("channel") or r.get("channel", ""),
                        title=info.get("title", ""), url=f"https://www.youtube.com/watch?v={r['id']}", published_at=dt,
-                       youtube_id=r["id"], description=(info.get("description") or "")[:2000]))
+                       youtube_id=r["id"], description=(info.get("description") or "")[:2000],
+                       duration=int(info["duration"]) if info.get("duration") else None))
         if len(out) >= limit:
             break
     return out
@@ -130,7 +131,8 @@ def parse_itunes(person: Person, results: list[dict], now: datetime, days: int, 
             continue
         out.append(_ep(person, id=canonical_id(r.get("episodeGuid"), None, r.get("trackViewUrl")), show=r.get("collectionName", ""),
                        title=r.get("trackName", ""), url=r.get("trackViewUrl") or r.get("episodeUrl", ""), published_at=dt,
-                       audio_url=r.get("episodeUrl"), feed_url=r.get("feedUrl"), description=(r.get("description") or "")[:2000]))
+                       audio_url=r.get("episodeUrl"), feed_url=r.get("feedUrl"), description=(r.get("description") or "")[:2000],
+                       duration=round(r["trackTimeMillis"] / 1000) if r.get("trackTimeMillis") else None))
     return out
 
 

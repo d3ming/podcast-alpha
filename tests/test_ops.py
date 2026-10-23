@@ -40,7 +40,7 @@ def test_mark_and_stats_cli(tmp_path, capsys):
     assert m["timing"]["select"]["seconds"] >= 0 and "e2e" in m["timing"]
     main(["stats", "--runs", str(tmp_path)])
     out = capsys.readouterr().out
-    assert "2026-10-22" in out and "1/2" in out and "2/3 (67%)" in out and "e2e" in out
+    assert "2026-10-22" in out and "1/2" in out and "2/3 (67%)" in out and "active" in out and "idle" in out and "wall" in out
 
 
 def test_triage_deterministic_top_n_keeps_core():
@@ -67,7 +67,7 @@ def test_transcribe_whispers_only_triaged(monkeypatch, tmp_path):
     fetch_mod.transcribe_run(targs(run, top=2, people=None))
     m = json.loads((run / "manifest.json").read_text())
     assert len(calls) == 2 and "https://cdn.example/rss:b.mp3" not in calls
-    assert m["triage"] == {"top": 2, "candidates": 3, "whisper": 2}
+    assert m["triage"] == {"top": 2, "candidates": 3, "whisper": 2, "clips": {}}
     assert m["timing"]["transcribe"]["seconds"] >= 0
 
 
