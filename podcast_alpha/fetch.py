@@ -139,6 +139,9 @@ def fetch(args) -> Path:
     run_dir = Path(args.runs) / (args.run_name or now.strftime("%Y-%m-%d"))
     run_dir.mkdir(parents=True, exist_ok=True)
     manifest = {"run_at": now.isoformat(timespec="seconds"), "days": args.days, "episodes": [], "skipped_seen": []}
+    from .timing import apply as timing_apply
+
+    timing_apply(manifest, "fetch", "start", now.isoformat(timespec="seconds"))
     known = store.known_since(now - timedelta(days=args.days + 7))
     people_first = getattr(args, "people_first", False)
     person_eps, eps = [], [] if people_first else discover(sources, now, args.days, t3_cap, per_source=args.per_source)
@@ -172,6 +175,7 @@ def fetch(args) -> Path:
         manifest["episodes"].append(row)
         store.add_episode(ep, tsrc)
     manifest["whisper_minutes"] = round(budget.used / 60, 1)
+    timing_apply(manifest, "fetch", "end")
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
     print(f"[run] {run_dir} ({len(manifest['episodes'])} episodes)")
     return run_dir
@@ -200,14 +204,26 @@ def transcribe_run(args) -> Path:
         log(f"stale lock from dead pid {pid or '?'}; taking over")
     lock.write_text(str(os.getpid()))
     reuse = ReuseIndex(run_dir.parent, exclude=run_dir)
+    from .timing import apply as timing_apply
+
+    top = getattr(args, "top", 0) or 0
     try:
-        save(path, refresh_flags(json.loads(path.read_text()), run_dir, min_chars))
+        manifest = timing_apply(refresh_flags(json.loads(path.read_text()), run_dir, min_chars), "transcribe", "start")
+        if top and ("triage" not in manifest or getattr(args, "retriage", False)):
+            from .triage import triage
+
+            people = load_people(args.people) if getattr(args, "people", None) and Path(args.people).exists() else []
+            picked = triage(manifest, people, top, is_news=is_news)
+            log(f"triage: whisper {len(picked)} of {manifest['triage']['candidates']} (top {top} + core people)")
+        save(path, manifest)
         while True:
             manifest = json.loads(path.read_text())
             todo = [e for e in manifest["episodes"] if not e["has_transcript"] and e.get("audio_url") 
                     and e["episode_id"] not in tried and (retry or not e.get("whisper_error"))
-                    and not (e.get("rerun") and not reruns) and not (skip_news and is_news(e))]
-            todo.sort(key=lambda e: (not e.get("source_tag", "").startswith("person:"), is_news(e)))
+                    and not (e.get("rerun") and not reruns) and not (skip_news and is_news(e))
+                    and (not top or e.get("triage", {}).get("whisper", True))]
+            todo.sort(key=lambda e: (is_news(e), -e.get("triage", {}).get("score", 0),
+                                     not e.get("source_tag", "").startswith("person:"), e["episode_id"]))
             if not todo or budget.take() < 60:
                 break
             e = todo[0]
@@ -244,6 +260,10 @@ def transcribe_run(args) -> Path:
             log(f"done {e['episode_id']} {tsrc or e.get('whisper_error')}")
     finally:
         lock.unlink(missing_ok=True)
+        try:
+            save(path, timing_apply(json.loads(path.read_text()), "transcribe", "end"))
+        except (OSError, ValueError):
+            pass
     log(f"finished, {round(budget.used / 60, 1)} min used")
     return run_dir
 
@@ -393,7 +413,8 @@ def whisper_python() -> str:
                      "). Install with `pip install -e '.[whisper]'` or set PA_PYTHON; rerun with --no-transcribe to skip.")
 
 
-def queue_transcribe(run_dir: Path, minutes: float, db: str | None, python: str | None = None, skip_news: bool = False) -> int:
+def queue_transcribe(run_dir: Path, minutes: float, db: str | None, python: str | None = None, skip_news: bool = False,
+                     top: int = 8, people: str | None = None) -> int:
     import subprocess
 
     cmd = [python or whisper_python(), "-m", "podcast_alpha.cli", "transcribe", str(run_dir), "--minutes", str(minutes)]
@@ -401,6 +422,7 @@ def queue_transcribe(run_dir: Path, minutes: float, db: str | None, python: str 
         cmd += ["--db", db]
     if skip_news:
         cmd.append("--skip-news")
+    cmd += ["--top", str(top)] + (["--people", str(people)] if people else [])
     with open(run_dir / "transcribe.log", "a") as log_file:
         proc = subprocess.Popen(cmd, stdout=log_file, stderr=subprocess.STDOUT, start_new_session=True,
                                 cwd=Path(__file__).resolve().parent.parent)
@@ -418,6 +440,7 @@ def daily(args) -> Path:
     if args.no_transcribe:
         print(f"[daily] transcribe later: /workspace/pa-venv/bin/podcast-alpha transcribe {run_dir}")
     else:
-        pid = queue_transcribe(run_dir, args.minutes, args.db, python, getattr(args, "skip_news", False))
+        pid = queue_transcribe(run_dir, args.minutes, args.db, python, getattr(args, "skip_news", False),
+                               getattr(args, "top", 8), getattr(args, "people", None))
         print(f"[daily] transcribe queued pid={pid} python={python} log={run_dir / 'transcribe.log'}")
     return run_dir

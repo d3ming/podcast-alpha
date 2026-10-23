@@ -76,6 +76,21 @@ def itunes_json(term: str) -> list[dict]:
     return r.json().get("results", [])
 
 
+def recall(seeds: list[dict], run_dir: Path) -> dict:
+    """Our 3 picks (selected.json) vs TMTB's essential list."""
+    sel_p = run_dir / "selected.json"
+    picks = json.loads(sel_p.read_text())["episodes"] if sel_p.exists() else []
+    pick_m = {"episodes": [{"episode_id": p["episode_id"], "title": p.get("title", ""),
+                            "source": f"{p.get('show', '')} " + " ".join(g.get("name", "") for g in p.get("guests", []))}
+                           for p in picks]}
+    hits = [s for s in seeds if covered(s, pick_m)]
+    n = len(seeds)
+    return {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "tmtb": n, "picks": len(picks),
+            "hits": len(hits), "recall": round(len(hits) / n, 3) if n else 0.0,
+            "hit": [s["headline"] for s in hits], "missed": [s["headline"] for s in seeds if s not in hits],
+            "found_in_run": sum(1 for s in seeds if s.get("covered_by"))}
+
+
 def run(text: str, run_dir: Path, days: float = 4, fetch_json=itunes_json, now: datetime | None = None) -> dict:
     now = now or datetime.now(timezone.utc)
     manifest_path = run_dir / "manifest.json"
@@ -94,5 +109,14 @@ def run(text: str, run_dir: Path, days: float = 4, fetch_json=itunes_json, now: 
         if not s["candidates"]:
             md.append("  - no free audio found via iTunes search")
     (run_dir / "missed.md").write_text("\n".join(md) + "\n")
+    rec = recall(seeds, run_dir)
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text())
+        manifest["recall"] = rec
+        tmp = manifest_path.with_suffix(".recall.tmp")
+        tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+        tmp.replace(manifest_path)
+    if rec["tmtb"]:
+        print(f"[tmtb] recall: our picks hit {rec['hits']}/{rec['tmtb']} ({rec['recall']:.0%}); run found {rec['found_in_run']}")
     print(f"[tmtb] {len(seeds)} seeds, {len(seeds) - len(missed)} covered, {len(missed)} missed -> {run_dir / 'missed.md'}")
     return {"seeds": seeds, "missed": missed}

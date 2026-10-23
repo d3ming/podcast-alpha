@@ -43,6 +43,19 @@ def check(args) -> None:
     print(f"[check] {args.file} ok")
 
 
+def mark(args) -> None:
+    from .timing import mark as do_mark
+
+    t = do_mark(Path(args.run), args.stage, args.event)["timing"]
+    print(f"[mark] {args.stage} {args.event} {t[args.stage][args.event]}" + (f" ({t[args.stage]['seconds']} s)" if args.event == "end" and "seconds" in t[args.stage] else ""))
+
+
+def stats(args) -> None:
+    from .timing import stats as table
+
+    print(table(Path(args.runs)), end="")
+
+
 def links(args) -> None:
     from .links import fill
     for eid, (yt, lu) in fill(Path(args.run), ROOT / "sources.yaml").items():
@@ -124,6 +137,9 @@ def main(argv=None):
     t.add_argument("--include-reruns", action="store_true")
     t.add_argument("--min-transcript-chars", type=int, default=5000)
     t.add_argument("--skip-news", action="store_true", help="skip news/market-recap shows (default: whisper them last)")
+    t.add_argument("--top", type=int, default=8, help="triage: whisper only the top N by metadata score, plus core people (0 = all)")
+    t.add_argument("--people", default=str(ROOT / "people.yaml"))
+    t.add_argument("--retriage", action="store_true", help="recompute triage even if the manifest already has it")
     m = sub.add_parser("merge", help="merge a --youtube-only output dir into a run folder")
     m.add_argument("dir")
     m.add_argument("--into", required=True)
@@ -134,6 +150,7 @@ def main(argv=None):
     d.add_argument("--minutes", type=float, default=600, help="whisper budget for the queued transcribe")
     d.add_argument("--no-transcribe", action="store_true")
     d.add_argument("--skip-news", action="store_true", help="queued transcribe skips news shows (default: last)")
+    d.add_argument("--top", type=int, default=8, help="queued transcribe whispers only the top N by triage score, plus core people")
     d.add_argument("--tmtb", help="reference email body to run tmtb-import as a recall check after fetch")
     c = sub.add_parser("check", help="validate selected.json or report.json")
     c.add_argument("kind", choices=["selected", "report"])
@@ -150,6 +167,12 @@ def main(argv=None):
     ti.add_argument("--days", type=float, default=4)
     lk = sub.add_parser("links", help="resolve youtube_url (verified) and listen_url (Apple/Spotify/episode page) into selected.json")
     lk.add_argument("run")
+    mk = sub.add_parser("mark", help="record a stage start/end timestamp in the run's manifest.json")
+    mk.add_argument("stage", choices=["fetch", "transcribe", "select", "report", "publish"])
+    mk.add_argument("event", choices=["start", "end"])
+    mk.add_argument("--run", required=True)
+    st = sub.add_parser("stats", help="trend table across runs: stage durations, e2e, transcribed, recall")
+    st.add_argument("--runs", default=str(ROOT / "runs"))
     p = sub.add_parser("publish", help="validate ranked.json and render the digest")
     p.add_argument("ranked")
     p.add_argument("--out")
@@ -157,7 +180,7 @@ def main(argv=None):
     p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
     {"fetch": fetch, "daily": daily, "merge": merge, "transcribe": transcribe_run, "publish": publish, "check": check,
-     "report": render_report, "tmtb-import": tmtb_import, "links": links}[args.cmd](args)
+     "report": render_report, "tmtb-import": tmtb_import, "links": links, "mark": mark, "stats": stats}[args.cmd](args)
 
 
 if __name__ == "__main__":

@@ -53,3 +53,15 @@ The weekly ranking path (`fetch`, `prompts/rank.md`, `publish`) and the Mac YouT
 
 - Public repo: never commit run folders, holdings, weights, tokens or copied newsletter text.
 - Every report claim carries a speaker and a transcript timestamp; paraphrase, don't quote at length.
+
+## Timing, triage, recall
+- Timings: `fetch` and `transcribe` record their own start/end in `manifest.json` (`timing`). Agent steps call
+  `podcast-alpha mark select|report|publish start|end --run runs/<name>`. `timing.e2e` spans first start to last end.
+- `podcast-alpha stats` prints a trend table across runs: per-stage durations, e2e, transcribed/total, recall.
+- Triage: `transcribe` (and `daily`, which queues it) scores untranscribed episodes on metadata (people.yaml person
+  search/name match, tier, named guest, title keywords, recency, news and rerun penalties), stores `triage`
+  {score, reasons, rank, whisper} per episode and whispers only the top `--top` (default 8) plus every core-person
+  episode. `--top 0` whispers all; `--retriage` recomputes. Deterministic (ties broken by episode_id).
+- Recall: `tmtb-import` writes `recall` {tmtb, picks, hits, recall, hit, missed, found_in_run} into the run's
+  manifest (our selected.json picks vs TMTB's essential list).
+

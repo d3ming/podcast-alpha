@@ -62,7 +62,7 @@ def test_queue_uses_pinned_python(monkeypatch, tmp_path):
 
     monkeypatch.setattr("subprocess.Popen", lambda cmd, **k: seen.setdefault("cmd", cmd) and P())
     assert fetch_mod.queue_transcribe(tmp_path, 600, None, "/venv/bin/python", skip_news=True) == 7
-    assert seen["cmd"][0] == "/venv/bin/python" and seen["cmd"][-1] == "--skip-news"
+    assert seen["cmd"][0] == "/venv/bin/python" and "--skip-news" in seen["cmd"] and seen["cmd"][-2:] == ["--top", "8"]
 
 
 def test_transcribe_preflight_and_stale_lock(monkeypatch, tmp_path):
