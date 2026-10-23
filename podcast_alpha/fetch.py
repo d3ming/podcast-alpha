@@ -13,7 +13,7 @@ import yaml
 
 from .config import load_sources
 from .ingest import Episode, discover
-from .people import dedupe, discover_people, load_people
+from .people import apply_source_tiers, dedupe, discover_people, load_people
 from .ingest import in_window, is_rerun
 from .transcribe import MIN_TRANSCRIPT_CHARS, fmt_ts, get_transcript, is_fallback, title_match, transcript_chars
 from .whisper import Budget
@@ -78,7 +78,7 @@ def youtube_only(args, now: datetime) -> Path:
     meta = {"run_at": now.isoformat(timespec="seconds"), "days": args.days}
     if args.people:
         person_eps, meta["people"] = discover_people(load_people(args.people), now, args.days, eps, args.per_person, ("ytdlp",))
-        eps += person_eps
+        eps += apply_source_tiers(person_eps, load_sources(args.sources)[0])
     out = Path(args.out)
     (out / "transcripts").mkdir(parents=True, exist_ok=True)
     rows, budget = [], Budget(600 if args.whisper_minutes is None else args.whisper_minutes, args.whisper_per_episode)
@@ -148,6 +148,7 @@ def fetch(args) -> Path:
     person_eps, eps = [], [] if people_first else discover(sources, now, args.days, t3_cap, per_source=args.per_source)
     if args.people:
         person_eps, manifest["people"] = discover_people(load_people(args.people), now, args.days, eps + known, args.per_person)
+        apply_source_tiers(person_eps, load_sources(args.sources)[0])
     if people_first:
         eps = [e for e in discover(sources, now, args.days, t3_cap, per_source=args.per_source)
                if not any(p.id == e.id or title_match(p.title, e.title) >= 0.8 for p in person_eps)]

@@ -22,6 +22,7 @@ class Source:
     fallback: list[str] = field(default_factory=list)
     transcripts: list[str] = field(default_factory=list)
     youtube_channel_id: str | None = None  # UC... id; links uses the free channel RSS to find the episode video
+    itunes_id: int | None = None  # Apple collection id; person-search hits on this show inherit its tier
     news: bool = False  # daily news/market-recap show: whispered last (or skipped with --skip-news)
 
     @property

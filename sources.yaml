@@ -57,3 +57,4 @@ sources:
   - {id: confession-partovi, name: "Confession with Ali Partovi", tier: 2, rss: "https://rss2.flightcast.com/ktf0bucx8pc8emdwamn9vwjj.xml", topics: [tech]}
   - {id: deep-view, name: "The Deep View: Conversations", tier: 2, rss: "https://feeds.transistor.fm/tdv", topics: [ai]}
   - {id: pioneers-of-ai, name: "Pioneers of AI", tier: 2, rss: "https://rss.art19.com/pioneers-of-ai", topics: [ai]}
+  - {id: tbpn, name: TBPN, tier: 1, rss: "https://feeds.transistor.fm/technology-brother", itunes_id: 1772360235, topics: [tech, ai]}

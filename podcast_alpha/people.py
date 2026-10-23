@@ -159,6 +159,27 @@ def dedupe(channel_eps: list[Episode], person_eps: list[Episode], threshold: flo
     return kept
 
 
+def _norm_show(s: str | None) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
+
+
+def _norm_feed(u: str | None) -> str:
+    return re.sub(r"^https?://(www\.)?", "", (u or "").strip().lower()).rstrip("/")
+
+
+def apply_source_tiers(eps: list[Episode], sources, default: int = 2) -> list[Episode]:
+    """Person-search hits take the tier of their show in sources.yaml (feed URL, Apple id or name), else `default`."""
+    by_feed = {_norm_feed(s.rss): s.tier for s in sources if s.rss}
+    by_id = {str(s.itunes_id): s.tier for s in sources if getattr(s, "itunes_id", None)}
+    by_name = {_norm_show(s.name): s.tier for s in sources}
+    for e in eps:
+        m = re.search(r"/id(\d+)", e.url or "")
+        tier = (by_feed.get(_norm_feed(e.feed_url)) if e.feed_url else None) \
+            or (by_id.get(m.group(1)) if m else None) or by_name.get(_norm_show(e.source_name))
+        e.tier = tier or default
+    return eps
+
+
 FINDERS = {"itunes": from_itunes, "ytdlp": from_youtube_search}
 
 
