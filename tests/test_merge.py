@@ -80,6 +80,7 @@ def test_transcribe_run_is_resumable(tmp_path, monkeypatch):
         return SEGS, 120
 
     monkeypatch.setattr(w, "transcribe", fake)
+    monkeypatch.setattr(w, "available", lambda: True)
     transcribe_run(SimpleNamespace(run=str(run), minutes=600, per_episode=None, db=str(db), force=False))
     m = json.loads((run / "manifest.json").read_text())
     a, b, c = m["episodes"]

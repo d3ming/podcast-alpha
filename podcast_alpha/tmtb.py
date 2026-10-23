@@ -147,11 +147,9 @@ def run(text: str, run_dir: Path, days: float = 4, fetch_json=itunes_json, now: 
     (run_dir / "missed.md").write_text("\n".join(md) + "\n")
     rec = recall(seeds, run_dir)
     if manifest_path.exists():
-        manifest = json.loads(manifest_path.read_text())
-        manifest["recall"] = rec
-        tmp = manifest_path.with_suffix(".recall.tmp")
-        tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-        tmp.replace(manifest_path)
+        from .manifest import update
+
+        update(manifest_path, lambda m: m.update(recall=rec))
     if rec["tmtb"]:
         print(f"[tmtb] recall: our picks hit {rec['hits']}/{rec['tmtb']} ({rec['recall']:.0%}); run found {rec['found_in_run']}")
     print(f"[tmtb] {len(seeds)} seeds, {len(seeds) - len(missed)} covered, {len(missed)} missed -> {run_dir / 'missed.md'}")

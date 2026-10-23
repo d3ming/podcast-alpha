@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -45,13 +44,10 @@ def split(t: dict) -> tuple[int | None, int | None]:
 
 
 def mark(run_dir: Path, stage: str, event: str, at: str | None = None) -> dict:
-    """Read-modify-write manifest.json atomically (transcribe also rewrites it; it re-reads each loop)."""
-    path = Path(run_dir) / "manifest.json"
-    manifest = apply(json.loads(path.read_text()), stage, event, at)
-    tmp = path.with_suffix(f".mark{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    tmp.replace(path)
-    return manifest
+    """Locked read-modify-write of manifest.json (transcribe and others write it concurrently)."""
+    from .manifest import update
+
+    return update(Path(run_dir) / "manifest.json", lambda m: apply(m, stage, event, at))
 
 
 def fmt(sec) -> str:
@@ -61,12 +57,13 @@ def fmt(sec) -> str:
 
 
 def stats(runs: Path) -> str:
-    rows = []
+    rows, last = [], None
     for p in sorted(Path(runs).glob("*/manifest.json")):
         try:
             m = json.loads(p.read_text())
         except (OSError, json.JSONDecodeError):
             continue
+        last = (p.parent.name, m)
         t, rec = m.get("timing", {}), m.get("recall") or {}
         eps = m.get("episodes", [])
         active, idle = split(t)
@@ -77,4 +74,12 @@ def stats(runs: Path) -> str:
     head = ["run", *STAGES, "active", "idle", "wall", "transcribed", "recall"]
     widths = [max(len(str(r[i])) for r in [head] + rows) for i in range(len(head))]
     line = lambda r: "  ".join(str(c).ljust(w) for c, w in zip(r, widths))
-    return "\n".join([line(head), line(["-" * w for w in widths])] + [line(r) for r in rows]) + "\n"
+    out = "\n".join([line(head), line(["-" * w for w in widths])] + [line(r) for r in rows]) + "\n"
+    if last and isinstance(last[1].get("sources"), dict):
+        bad = errored_sources(last[1]["sources"])
+        out += f"source errors in {last[0]}: {'; '.join(bad) if bad else 'none'}\n"
+    return out
+
+
+def errored_sources(health: dict) -> list[str]:
+    return [f"{k} ({v['error']})" for k, v in health.items() if v.get("error")]

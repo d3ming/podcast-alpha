@@ -33,25 +33,38 @@ has no faster-whisper). `daily` checks this up front and pins the queued `transc
    (people first). News/market-recap shows (`news: true` in `sources.yaml`: Halftime, Squawk, Power Lunch, WSJ TNB)
    are whispered last; `--skip-news` skips them. Transcripts already in another run folder (same episode id,
    enclosure, or show + title) are reused, not re-whispered. Episodes outside the window or flagged as replays/re-airs are excluded (`excluded` in the manifest).
+   Rerunning with an existing `--run-name` only adds new episodes (it refuses while `transcribe.lock` names a live pid).
+   `daily` prints feed errors; `manifest.sources` holds per-source {found, kept, error} and `stats` shows the latest run's errors.
+   On the Mac add `--youtube-mirror` to caption episodes that have no feed transcript from the same episode on YouTube.
 2. Recall check, next morning: the TMTB email lands ~2:40 PM PT, after the 9 AM report, so check it against the
    previous day's run: `podcast-alpha tmtb-import email.txt` (defaults to `--date yesterday`, i.e. `runs/<yesterday>`;
    `--run runs/<name>` or `--date YYYY-MM-DD` to override; `-` reads stdin). Writes `seeds.json`, `missed.json`, `missed.md`; fetch or whisper anything
    important in `missed.md` before selecting. Paste or export the email body; never scrape Substack.
 3. Select exactly 3 strict picks (novel exec/investor signal, no recaps or news shows): follow `prompts/select.md`, write `runs/<name>/selected.json`, check with `podcast-alpha check <file>` (schema inferred from selected*.json / report*.json).
+   `check` also grounds the file in the run: ids and transcript flags against the manifest, no reruns, one pick per person;
+   for a report also timestamps inside the transcript, no 12-word verbatim runs, same episodes as `selected.json`. `report`
+   and `links` run the same checks and refuse on errors.
 3b. Links: find each pick's YouTube video by web search and set `youtube_url`/`youtube_published` in `selected.json` only on a
    title-or-guest + date match (never guess), then run `podcast-alpha links runs/<name>` (verifies via oEmbed, adds Apple/
-   Spotify/episode-page `listen_url`; see `prompts/report.md`). yt-dlp search from the Mac is manual-only.
+   Spotify/episode-page `listen_url`; see `prompts/report.md`). On the Mac add `links --ytsearch` (yt-dlp search, still
+   oEmbed-verified); it is not for the box.
 4. Report: follow `prompts/report.md`, write `runs/<name>/report.json` (`schema/report.schema.json`).
 5. Render/publish: `podcast-alpha report runs/<name>/report.json` writes `report.md`; with `NOTION_TOKEN` and a parent page
    (`NOTION_PARENT_PAGE_ID`, else `notion_parent_page_id` in `publish.yaml`, else `--notion-parent`) it also creates
    the Notion page. Without `NOTION_TOKEN` it skips the API, still writes `report.md` and exits 0; publish `report.md`
    through a Notion connector. `report.md` opens with Key Insights, then Essential Episodes.
+   `check`/`report` also print `warning:` lines when a number in a cite is not spoken within 2 minutes of its timestamp;
+   read them and fix the cite (a warning is a likely wrong number or wrong time). On the Mac, `check report <file> --captions`
+   compares against the YouTube captions and flags timestamps that run late or early versus the linked video.
 
 The weekly ranking path (`fetch`, `prompts/rank.md`, `publish`) and the Mac YouTube fallback are in README.md.
 
 ## Rules
 
 - Public repo: never commit run folders, holdings, weights, tokens or copied newsletter text.
+- No PR workflow: commit and push straight to `main`; no feature branches or pull requests.
+- Write `manifest.json` only through `podcast_alpha.manifest.update` (locked read-modify-write); `transcribe` runs for
+  hours while `mark`, `tmtb-import`, `links` and `fetch` write the same file.
 - Every report claim carries a speaker and a transcript timestamp; paraphrase, don't quote at length.
 
 ## Timing, triage, recall

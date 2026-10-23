@@ -15,6 +15,7 @@ from .config import load_sources
 from .ingest import Episode, discover
 from .people import apply_source_tiers, dedupe, discover_people, load_people
 from .ingest import in_window, is_rerun
+from .manifest import update as update_manifest
 from .transcribe import MIN_TRANSCRIPT_CHARS, fmt_ts, get_transcript, is_fallback, title_match, transcript_chars
 from .whisper import Budget
 
@@ -109,21 +110,27 @@ def merge(args) -> Path:
     channel = [x for x in loaded if not x[0].source_id.startswith("person:")]
     people = dedupe(known + [x[0] for x in channel], [x[0] for x in loaded if x[0].source_id.startswith("person:")])
     keep = {id(e) for e in people}
-    added = 0
+    rows, skipped = [], []
     for ep, segs, tsrc in loaded:
         is_person = ep.source_id.startswith("person:")
         if (is_person and id(ep) not in keep) or ep.id in have or store.seen(ep.id):
-            manifest["skipped_seen"].append(ep.id)
+            skipped.append(ep.id)
             print(f"[dedupe] skip {ep.id}")
             continue
         ep.via = ep.via or ("youtube" if is_person else "channel")
-        manifest["episodes"].append(write_episode(run_dir, ep, segs, tsrc))
+        rows.append(write_episode(run_dir, ep, segs, tsrc))
         store.add_episode(ep, tsrc)
         have.add(ep.id)
-        added += 1
-    manifest.setdefault("merged", []).append({"from": str(args.dir), "at": now.isoformat(timespec="seconds"), "added": added})
-    (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    print(f"[merge] {run_dir} (+{added} episodes)")
+    entry = {"from": str(args.dir), "at": now.isoformat(timespec="seconds"), "added": len(rows)}
+
+    def apply(m):
+        ids = {e["episode_id"] for e in m.setdefault("episodes", [])}
+        m["episodes"] += [r for r in rows if r["episode_id"] not in ids]
+        m.setdefault("skipped_seen", []).extend(skipped)
+        m.setdefault("merged", []).append(entry)
+
+    update_manifest(run_dir / "manifest.json", apply, lambda: load_manifest(run_dir, now, src.get("days")))
+    print(f"[merge] {run_dir} (+{len(rows)} episodes)")
     return run_dir
 
 
@@ -139,20 +146,31 @@ def fetch(args) -> Path:
     store = Store(args.db)
     run_dir = Path(args.runs) / (args.run_name or now.strftime("%Y-%m-%d"))
     run_dir.mkdir(parents=True, exist_ok=True)
+    lock = run_dir / "transcribe.lock"
+    if lock.exists() and pid_alive(pid := lock.read_text().strip()):
+        raise SystemExit(f"[fetch] {lock} held by running transcribe pid {pid}; wait for it to finish, then rerun")
+    path = run_dir / "manifest.json"
+    prior = json.loads(path.read_text()) if path.exists() else None
+    have = {e["episode_id"] for e in (prior or {}).get("episodes", [])}
+    if prior:
+        print(f"[run] {run_dir} exists ({len(have)} episodes); adding only new ones")
     manifest = {"run_at": now.isoformat(timespec="seconds"), "days": args.days, "episodes": [], "skipped_seen": []}
     from .timing import apply as timing_apply
 
     timing_apply(manifest, "fetch", "start", now.isoformat(timespec="seconds"))
     known = store.known_since(now - timedelta(days=args.days + 7))
     people_first = getattr(args, "people_first", False)
-    person_eps, eps = [], [] if people_first else discover(sources, now, args.days, t3_cap, per_source=args.per_source)
+    health = {}
+    person_eps, eps = [], [] if people_first else discover(sources, now, args.days, t3_cap, per_source=args.per_source,
+                                                           health=health)
     if args.people:
         person_eps, manifest["people"] = discover_people(load_people(args.people), now, args.days, eps + known, args.per_person)
         apply_source_tiers(person_eps, load_sources(args.sources)[0])
     if people_first:
-        eps = [e for e in discover(sources, now, args.days, t3_cap, per_source=args.per_source)
+        eps = [e for e in discover(sources, now, args.days, t3_cap, per_source=args.per_source, health=health)
                if not any(p.id == e.id or title_match(p.title, e.title) >= 0.8 for p in person_eps)]
     eps += person_eps
+    manifest["sources"] = health
     manifest["excluded"] = []
     keep_reruns = getattr(args, "include_reruns", False)
     for e in list(eps):
@@ -166,6 +184,11 @@ def fetch(args) -> Path:
     news_ids = {s.id for s in sources if s.news}
     eps.sort(key=lambda e: (e.source_id.startswith("person:") != people_first, e.tier, -e.published_at.timestamp()))
     for ep in eps:
+        if ep.id in have:
+            continue
+        if getattr(args, "youtube_mirror", False) and "youtube_mirror" not in (ep.methods or []):
+            ep.methods = [m for m in (ep.methods or ["podcast_transcript", "whisper"]) if m != "whisper"] + \
+                ["youtube_mirror", "whisper"]
         dup = not args.refetch and (store.seen(ep.id) or any(k.id != ep.id and title_match(k.title, ep.title) >= 0.8 for k in known))
         if dup:
             manifest["skipped_seen"].append(ep.id)
@@ -178,8 +201,28 @@ def fetch(args) -> Path:
         store.add_episode(ep, tsrc)
     manifest["whisper_minutes"] = round(budget.used / 60, 1)
     timing_apply(manifest, "fetch", "end")
-    (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    print(f"[run] {run_dir} ({len(manifest['episodes'])} episodes)")
+    new = manifest
+
+    def apply(m):
+        if m is new:
+            return
+        ids = {e["episode_id"] for e in m.setdefault("episodes", [])}
+        m["episodes"] += [r for r in new["episodes"] if r["episode_id"] not in ids]
+        ids |= {r["episode_id"] for r in new["episodes"]}
+        seen = set(m.setdefault("skipped_seen", []))
+        m["skipped_seen"] += [i for i in dict.fromkeys(new["skipped_seen"]) if i not in seen and i not in ids]
+        gone = {x["episode_id"] for x in m.setdefault("excluded", [])}
+        m["excluded"] += [x for x in new["excluded"] if x["episode_id"] not in gone and x["episode_id"] not in ids]
+        m["whisper_minutes"] = round(m.get("whisper_minutes", 0) + budget.used / 60, 1)
+        m["sources"] = new["sources"]
+        if "people" in new:
+            m["people"] = new["people"]
+        if not (m.get("timing", {}).get("fetch") or {}).get("end"):
+            timing_apply(m, "fetch", "start", new["timing"]["fetch"]["start"])
+            timing_apply(m, "fetch", "end", new["timing"]["fetch"]["end"])
+
+    final = update_manifest(path, apply, lambda: new)
+    print(f"[run] {run_dir} ({len(final['episodes'])} episodes, +{len(new['episodes'])} new)")
     return run_dir
 
 
@@ -225,15 +268,17 @@ def transcribe_run(args) -> Path:
     from .timing import apply as timing_apply
 
     top = getattr(args, "top", 0) or 0
-    try:
-        manifest = timing_apply(refresh_flags(json.loads(path.read_text()), run_dir, min_chars), "transcribe", "start")
-        if top and ("triage" not in manifest or getattr(args, "retriage", False)):
+    def start(m):
+        timing_apply(refresh_flags(m, run_dir, min_chars), "transcribe", "start")
+        if top and ("triage" not in m or getattr(args, "retriage", False)):
             from .triage import triage
 
             people = load_people(args.people) if getattr(args, "people", None) and Path(args.people).exists() else []
-            picked = triage(manifest, people, top, is_news=is_news, run_dir=run_dir)
-            log(f"triage: whisper {len(picked)} of {manifest['triage']['candidates']} (top {top} + core people)")
-        save(path, manifest)
+            picked = triage(m, people, top, is_news=is_news, run_dir=run_dir)
+            log(f"triage: whisper {len(picked)} of {m['triage']['candidates']} (top {top} + core people)")
+
+    try:
+        update_manifest(path, start)
         while True:
             manifest = json.loads(path.read_text())
             todo = [e for e in manifest["episodes"] if not e["has_transcript"] and e.get("audio_url") 
@@ -245,6 +290,7 @@ def transcribe_run(args) -> Path:
             if not todo or budget.take() < 60:
                 break
             e = todo[0]
+            before, fails = dict(e), {}
             tried.add(e["episode_id"])
             e.pop("whisper_error", None)
             log(f"start {e['episode_id']} ({len(todo)} left, {round(budget.left / 60)} min budget) {e['title'][:60]}")
@@ -261,7 +307,7 @@ def transcribe_run(args) -> Path:
             except Exception as exc:
                 segs, tsrc, used = None, None, 0.0
                 e["whisper_error"] = str(exc) if isinstance(exc, DownloadError) else type(exc).__name__
-                record_failure(run_dir, manifest, e, exc)
+                record_failure(run_dir, fails, e, exc)
             if segs and is_fallback(segs, min_chars):
                 segs, e["whisper_error"] = None, "short"
             if segs:
@@ -273,15 +319,25 @@ def transcribe_run(args) -> Path:
                     store.set_transcript(e["episode_id"], tsrc)
             elif not e.get("whisper_error"):
                 e["whisper_error"] = "empty"
-            manifest["whisper_minutes"] = round(manifest.get("whisper_minutes", 0) + (used if segs else 0) / 60, 1)
-            tmp = path.with_suffix(".tmp")
-            tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-            tmp.replace(path)
+            changed = {k: v for k, v in e.items() if k not in before or before[k] != v}
+            dropped = [k for k in before if k not in e]
+
+            def apply(m):  # only this iteration's changes, onto the fresh manifest
+                for row in m["episodes"]:
+                    if row["episode_id"] == e["episode_id"]:
+                        row.update(changed)
+                        for k in dropped:
+                            row.pop(k, None)
+                m["whisper_minutes"] = round(m.get("whisper_minutes", 0) + (used if segs else 0) / 60, 1)
+                if fails:
+                    m.setdefault("failures", []).extend(fails["failures"])
+
+            update_manifest(path, apply)
             log(f"done {e['episode_id']} {tsrc or e.get('whisper_error')}")
     finally:
         lock.unlink(missing_ok=True)
         try:
-            save(path, timing_apply(json.loads(path.read_text()), "transcribe", "end"))
+            update_manifest(path, lambda m: timing_apply(m, "transcribe", "end"))
         except (OSError, ValueError):
             pass
     log(f"finished, {round(budget.used / 60, 1)} min used")
@@ -379,12 +435,6 @@ class ReuseIndex:
         return None
 
 
-def save(path: Path, manifest: dict) -> None:
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    tmp.replace(path)
-
-
 def refresh_flags(manifest: dict, run_dir: Path, min_chars: int) -> dict:
     for e in manifest["episodes"]:
         md = run_dir / e["file"]
@@ -453,6 +503,12 @@ def daily(args) -> Path:
     args.days, args.people_first, args.youtube_only = args.hours / 24, True, False
     python = None if args.no_transcribe else whisper_python()  # fail fast, before the slow fetch
     run_dir = fetch(args)
+    from .timing import errored_sources
+
+    health = json.loads((run_dir / "manifest.json").read_text()).get("sources") or {}
+    bad = errored_sources(health)
+    print(f"[daily] source errors {len(bad)}/{len(health)}: {'; '.join(bad)}" if bad else
+          f"[daily] source errors 0/{len(health)}")
     if args.tmtb:
         from .tmtb import run as tmtb_run
 

@@ -74,10 +74,13 @@ Output format: [`schema/ranked.schema.json`](schema/ranked.schema.json).
 
 ## publish
 
-`podcast-alpha publish runs/<date>/ranked.json [--out file.md] [--notion-parent <page id>]`
+`podcast-alpha publish runs/<date>/ranked.json [--top N] [--out file.md] [--notion-parent <page id>]`
 
 - Validates against the schema and the tier rules, and rejects anything that looks like holdings data.
   A clustered score spread prints a warning.
+- Grounds claims in the run folder next to the ranked file (ids in the manifest, timestamps inside the transcript, no
+  12-word verbatim runs); errors stop the publish, number-vs-timestamp mismatches print warnings. `--top N` limits the digest
+  to the first N ranked episodes.
 - Writes `digest-<week_of>.md` next to the ranked file.
 - If `NOTION_TOKEN` and a parent page id (`--notion-parent` or `NOTION_PARENT_PAGE_ID`) are set, it also creates the
   Notion page through the API. Otherwise Cain publishes the markdown with the Notion connector.

@@ -10,6 +10,8 @@ from html import unescape
 from difflib import SequenceMatcher
 from pathlib import Path
 
+from .manifest import update as update_manifest
+
 AUDIO_EXT = (".mp3", ".m4a", ".aac", ".wav", ".ogg", ".opus", ".flac", ".mp4a")
 TRACKING = ("podtrac.com", "chrt.fm", "pdst.fm", "pscrb.fm", "swap.fm", "byspotify.com", "traffic.megaphone.fm",
             "traffic.libsyn.com", "dcs.megaphone.fm", "op3.dev", "podscribe", "claritaspod", "arttrk.com", "pfx.vpixl.com",
@@ -115,6 +117,34 @@ def yt_ddg(ep: dict, fetch=_text) -> str | None:
     return None
 
 
+def yt_ytsearch(ep: dict, fetch=_text, run=None) -> str | None:
+    """Last resort, opt-in (Mac/residential IP; YouTube blocks servers): yt-dlp's ytsearch5. Results are only
+    accepted through yt_verify (oEmbed title/channel match, then the upload date, looked up with a second yt-dlp call)."""
+    import subprocess
+    import sys
+
+    run = run or (lambda cmd: subprocess.run(cmd, capture_output=True, text=True, timeout=90, check=True).stdout)
+    guests = " ".join(g["name"] for g in ep.get("guests") or [] if isinstance(g, dict) and "host" not in (g.get("role") or "").lower())
+    q = f"{ep.get('show') or ep.get('source') or ''} {guests or ep.get('title', '')}".strip()
+    out = run([sys.executable, "-m", "yt_dlp", "--flat-playlist", "--print", "%(id)s\t%(title)s\t%(channel)s\t%(upload_date)s", f"ytsearch5:{q}"])
+    for line in out.splitlines():
+        vid, *_, up = (line.split("\t") + [""])[:4]
+        vid, url = vid.strip(), f"https://www.youtube.com/watch?v={vid.strip()}"
+        if not re.fullmatch(r"[\w-]{11}", vid) or not yt_verify(ep, url, ep.get("youtube_published"), fetch):
+            continue
+        if not re.fullmatch(r"\d{8}", up.strip()):  # flat search lists no upload date: look it up for the one candidate
+            try:
+                up = run([sys.executable, "-m", "yt_dlp", "--skip-download", "--print", "%(upload_date)s", url]).strip().splitlines()[-1]
+            except Exception:
+                up = ""
+        if re.fullmatch(r"\d{8}", up.strip()):
+            if (dated := yt_verify(ep, url, f"{up[:4]}-{up[4:6]}-{up[6:8]}", fetch)):
+                return dated
+            continue
+        return url
+    return None
+
+
 YT_URL = re.compile(r"https?://(?:www\.|m\.)?(?:youtube\.com/(?:watch\?[^\s\"'<>]*v=|live/|shorts/)|youtu\.be/)[\w-]{11}[^\s\"'<>]*")
 
 
@@ -130,14 +160,14 @@ def yt_show_notes(ep: dict, fetch=_text) -> str | None:
     return None
 
 
-def youtube(ep: dict, channel_id: str | None = None, fetch=_text) -> str | None:
-    """Order: known id, agent-supplied url, feed show notes, channel RSS, web search."""
+def youtube(ep: dict, channel_id: str | None = None, fetch=_text, ytsearch: bool = False, run=None) -> str | None:
+    """Order: known id, agent-supplied url, feed show notes, channel RSS, web search, then (ytsearch=True) yt-dlp search."""
     if ep.get("youtube_id"):
         return f"https://www.youtube.com/watch?v={ep['youtube_id']}"
     if ep.get("youtube_url") and (u := yt_verify(ep, ep["youtube_url"], ep.get("youtube_published"), fetch)):
         return u
     for step in (lambda: yt_show_notes(ep, fetch), (lambda: yt_channel_rss(ep, channel_id, fetch)) if channel_id else None,
-                 lambda: yt_ddg(ep, fetch)):
+                 lambda: yt_ddg(ep, fetch), (lambda: yt_ytsearch(ep, fetch, run)) if ytsearch else None):
         if step:
             try:
                 if (u := step()):
@@ -199,7 +229,7 @@ def sources_by_name(sources: Path) -> dict:
     return {s["name"].lower(): s for s in data.get("sources", []) if isinstance(s, dict) and s.get("name")}
 
 
-def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text) -> dict:
+def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text, ytsearch: bool = False) -> dict:
     """Write youtube_url (verified or empty) and listen_url (non-YouTube fallback) into selected.json and the manifest.
     Returns {episode_id: (youtube_url, listen_url)}."""
     sel_p, man_p = run_dir / "selected.json", run_dir / "manifest.json"
@@ -207,7 +237,7 @@ def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text) -> d
     man = json.loads(man_p.read_text()) if man_p.exists() else {"episodes": []}
     by_id = {e["episode_id"]: e for e in man.get("episodes", [])}
     srcs = sources_by_name(sources) if sources and sources.exists() else {}
-    out = {}
+    out, found = {}, {}
     for e in sel["episodes"]:
         m = by_id.get(e["episode_id"], {})
         ep = {**m, **e, "youtube_id": e.get("youtube_id") or m.get("youtube_id")}
@@ -215,7 +245,7 @@ def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text) -> d
             md = re.search(r"## Description\n\n(.*?)(?:\n## |\Z)", (run_dir / m["file"]).read_text(), re.S)
             ep["description"] = md.group(1) if md else ""
         src = srcs.get((e.get("show") or "").lower(), {})
-        yt = youtube(ep, src.get("youtube_channel_id"), fetch)
+        yt = youtube(ep, src.get("youtube_channel_id"), fetch, ytsearch)
         lu = e.get("listen_url") if e.get("listen_url") and not bad_url(e["listen_url"]) and not yt_id(e["listen_url"]) else None
         lu = lu or resolve(ep, src.get("rss"), get)
         out[e["episode_id"]] = (yt, lu)
@@ -223,7 +253,17 @@ def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text) -> d
             d.pop("youtube_url", None) if not yt else d.__setitem__("youtube_url", yt)
             if lu:
                 d["listen_url"] = lu
+        if m:
+            found[e["episode_id"]] = (yt, lu)
     sel_p.write_text(json.dumps(sel, indent=1, ensure_ascii=False) + "\n")
     if man_p.exists():
-        man_p.write_text(json.dumps(man, indent=2, ensure_ascii=False) + "\n")
+        def apply(manifest):  # only the link fields, onto the fresh manifest (transcribe may be writing it)
+            for row in manifest.get("episodes", []):
+                if (hit := found.get(row["episode_id"])):
+                    yt, lu = hit
+                    row.pop("youtube_url", None) if not yt else row.__setitem__("youtube_url", yt)
+                    if lu:
+                        row["listen_url"] = lu
+
+        update_manifest(man_p, apply)
     return out

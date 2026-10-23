@@ -9,19 +9,25 @@ def ts_link(url: str, seconds: int) -> str:
     return fmt_ts(seconds)
 
 
-def render(data: dict, top_claims: int = 3) -> str:
-    eps = data["episodes"]
+def link(title: str, url: str) -> str:
+    return f"[{title}]({url})" if url.strip() else title
+
+
+def render(data: dict, top_claims: int = 3, top: int | None = None) -> str:
+    eps = data["episodes"][:top] if top else data["episodes"]
+    shown = f"Top {len(eps)} of {len(data['episodes'])} ranked episodes" if len(eps) < len(data["episodes"]) else f"Episodes: {len(eps)}"
     lines = [
         f"# Podcast alpha · Week of {data['week_of']} ranking (MVP)",
         "",
-        f"Ranked by {data['ranked_by']} from `{data['run_dir']}`. Episodes: {len(eps)}. Claims are unverified.",
+        f"Ranked by {data['ranked_by']} from `{data['run_dir']}`. {shown}. Claims were checked against the transcripts "
+        "(episode ids, timestamps, spoken numbers), not against filings or other sources.",
     ]
     if data.get("notes"):
         lines += ["", data["notes"]]
     lines += ["", "| # | Score | Episode | Source | Published | Why |", "|---|---|---|---|---|---|"]
     for e in eps:
         title = e["title"].replace("|", "/")
-        lines.append(f"| {e['rank']} | {e['score']} | [{title}]({e['url']}) | {e['source']} (T{e['tier']}) | "
+        lines.append(f"| {e['rank']} | {e['score']} | {link(title, e['url'])} | {e['source']} (T{e['tier']}) | "
                      f"{e['published'][:10]} | {e['reason'].replace('|', '/')} |")
     lines.append("")
     for e in eps:

@@ -70,6 +70,16 @@ def test_render_and_notion_blocks():
     assert rt[1]["text"]["link"]["url"] == "https://a" and rt[3]["annotations"]["bold"]
 
 
+def test_render_top_n_and_missing_url():
+    d = json.loads(json.dumps(GOOD))
+    n = len(d["episodes"])
+    d["episodes"][0]["url"] = ""
+    t0 = d["episodes"][0]["title"]
+    full, cut = render(d), render(d, top=1)
+    assert f"[{t0}]()" not in full and f"| {t0} |" in full and f"Episodes: {n}" in full
+    assert d["episodes"][1]["title"] not in cut and f"Top 1 of {n}" in cut
+
+
 def test_publish_cli_writes_markdown(tmp_path, monkeypatch, capsys):
     monkeypatch.delenv("NOTION_TOKEN", raising=False)
     p = tmp_path / "ranked.json"

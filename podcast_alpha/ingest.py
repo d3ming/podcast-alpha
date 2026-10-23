@@ -111,6 +111,10 @@ def from_rss(src: Source, now: datetime, days: int, parsed=None) -> list[Episode
         import feedparser
         parsed = feedparser.parse(src.rss)
     feed = parsed
+    status, bozo = getattr(parsed, "status", None) or 0, getattr(parsed, "bozo", False)
+    if not feed.entries and (bozo or status >= 400):
+        why = f"HTTP {status}" if status >= 400 else str(getattr(parsed, "bozo_exception", "") or "malformed feed")[:160]
+        raise ValueError(f"no entries from {src.rss}: {why}")
     out = []
     for e in feed.entries:
         dt = parse_date(e.get("published") or e.get("updated"))
@@ -171,7 +175,7 @@ def find(src: Source, now: datetime, days: int) -> tuple[list[Episode], str]:
         try:
             eps = FINDERS[how](src, now, days)
         except Exception as exc:
-            errors.append(f"{how}: {type(exc).__name__}")
+            errors.append(f"{how}: {type(exc).__name__}: {str(exc)[:200]}")
             continue
         for e in eps:
             e.via, e.methods = e.via or how, src.transcripts or None
@@ -179,20 +183,26 @@ def find(src: Source, now: datetime, days: int) -> tuple[list[Episode], str]:
     raise LookupError("; ".join(errors) or "no usable source")
 
 
-def discover(sources: list[Source], now: datetime, days: int, t3_cap: int, per_source: int = 3) -> list[Episode]:
+def discover(sources: list[Source], now: datetime, days: int, t3_cap: int, per_source: int = 3,
+             health: dict | None = None) -> list[Episode]:
+    """health, if given, gets {source id: {via, found (in window, before caps), kept, error}}."""
     eps: list[Episode] = []
     t3 = 0
+    health = {} if health is None else health
     for src in sources:
         try:
             found, how = find(src, now, days)
         except Exception as exc:
-            print(f"[ingest] {src.id}: {exc}")
+            print(f"[ingest] {src.id}: ERROR {exc}")
+            health[src.id] = {"via": None, "found": 0, "kept": 0, "error": str(exc)}
             continue
+        n = len(found)
         found.sort(key=lambda e: e.published_at, reverse=True)
         found = found[:per_source]
         if src.tier == 3:
             found = found[: max(0, t3_cap - t3)]
             t3 += len(found)
         print(f"[ingest] {src.id} via {how}: {len(found)} in window")
+        health[src.id] = {"via": how, "found": n, "kept": len(found), "error": None}
         eps.extend(found)
     return eps

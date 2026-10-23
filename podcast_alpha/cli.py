@@ -20,9 +20,14 @@ def publish(args) -> None:
         warnings = ranked.validate(data)
     except ranked.RankedError as exc:
         sys.exit(f"[publish] invalid: {exc}")
-    for w in warnings:
+    from . import report
+
+    errors, grounding = report.ranked_verify(data, Path(args.ranked).resolve().parent)
+    for w in warnings + grounding:
         print(f"[publish] warning: {w}")
-    md = render(data, top_claims=args.top_claims)
+    if errors:
+        sys.exit("\n".join(f"[publish] invalid: {e}" for e in errors))
+    md = render(data, top_claims=args.top_claims, top=args.top)
     out = Path(args.out or Path(args.ranked).with_name(f"digest-{data['week_of']}.md"))
     out.write_text(md)
     print(f"[publish] {out}")
@@ -54,9 +59,20 @@ def check(args) -> None:
     if kind not in KINDS:
         sys.exit(f"[check] unknown schema {kind!r}; use one of {', '.join(KINDS)}")
     try:
-        report.validate(json.loads(Path(args.file).read_text()), kind)
+        data = report.validate(json.loads(Path(args.file).read_text()), kind)
     except ranked.RankedError as exc:
         sys.exit(f"[check] invalid: {exc}")
+    run_dir = Path(args.file).resolve().parent
+    warnings = report.warn(kind, data, run_dir)
+    if args.captions:
+        if kind == "report":
+            warnings += report.caption_warn(data, run_dir)
+        else:
+            warnings.append("--captions only applies to report.json; ignored")
+    for w in warnings:
+        print(f"[check] warning: {w}")
+    if errors := report.verify(kind, data, Path(args.file).resolve().parent):
+        sys.exit("\n".join(f"[check] invalid: {e}" for e in errors))
     print(f"[check] {args.file} ok")
 
 
@@ -74,8 +90,19 @@ def stats(args) -> None:
 
 
 def links(args) -> None:
+    from . import ranked, report
     from .links import fill
-    for eid, (yt, lu) in fill(Path(args.run), ROOT / "sources.yaml").items():
+
+    sel_p = Path(args.run) / "selected.json"
+    if not sel_p.exists():
+        sys.exit(f"[links] no selected.json in {args.run}")
+    try:
+        data = report.validate(json.loads(sel_p.read_text()), "selected")
+    except ranked.RankedError as exc:
+        sys.exit(f"[links] invalid: {exc}")
+    if errors := report.verify("selected", data, Path(args.run)):
+        sys.exit("\n".join(f"[links] invalid: {e}" for e in errors))
+    for eid, (yt, lu) in fill(Path(args.run), ROOT / "sources.yaml", ytsearch=args.ytsearch).items():
         print(f"[links] {eid} youtube={yt or '-'} listen={lu or '-'}")
 
 
@@ -88,6 +115,10 @@ def render_report(args) -> None:
         data = report.validate(data, "report")
     except ranked.RankedError as exc:
         sys.exit(f"[report] invalid: {exc}")
+    if errors := report.verify("report", data, Path(args.report).resolve().parent):
+        sys.exit("\n".join(f"[report] invalid: {e}" for e in errors))
+    for w in report.warn("report", data, Path(args.report).resolve().parent):
+        print(f"[report] warning: {w}")
     out = Path(args.out or Path(args.report).with_name("report.md"))
     out.write_text(report.render(data))
     print(f"[report] {out}")
@@ -134,6 +165,9 @@ def add_fetch_args(f) -> None:
     f.add_argument("--refetch", action="store_true", help="include episodes already in the dedupe DB")
     f.add_argument("--min-transcript-chars", type=int, default=5000, help="shorter text is flagged fallback, not a transcript")
     f.add_argument("--include-reruns", action="store_true", help="keep replays and re-airs")
+    f.add_argument("--youtube-mirror", action="store_true",
+                   help="for episodes without a feed transcript, search YouTube for the same episode and use its captions "
+                        "(Mac/residential IP only; runs before whisper)")
 
 
 def main(argv=None):
@@ -172,6 +206,8 @@ def main(argv=None):
     c = sub.add_parser("check", help="validate selected.json or report.json")
     c.add_argument("kind", help="selected|report, or just the file (schema inferred from selected*.json / report*.json)")
     c.add_argument("file", nargs="?")
+    c.add_argument("--captions", action="store_true",
+                   help="report only, network: compare cite numbers/timestamps with the linked YouTube video's captions")
     r = sub.add_parser("report", help="validate report.json, render report.md, publish to Notion if configured")
     r.add_argument("report")
     r.add_argument("--out")
@@ -184,6 +220,8 @@ def main(argv=None):
     ti.add_argument("--days", type=float, default=4)
     lk = sub.add_parser("links", help="resolve youtube_url (verified) and listen_url (Apple/Spotify/episode page) into selected.json")
     lk.add_argument("run")
+    lk.add_argument("--ytsearch", action="store_true",
+                    help="last resort when no YouTube video was found: yt-dlp ytsearch5 (run from a Mac/residential IP; results still oEmbed-verified)")
     mk = sub.add_parser("mark", help="record a stage start/end timestamp in the run's manifest.json")
     mk.add_argument("stage", choices=["fetch", "transcribe", "select", "report", "publish"])
     mk.add_argument("event", choices=["start", "end"])
@@ -194,6 +232,7 @@ def main(argv=None):
     p.add_argument("ranked")
     p.add_argument("--out")
     p.add_argument("--top-claims", type=int, default=3)
+    p.add_argument("--top", type=int, help="digest only the top N ranked episodes (ranked.json keeps all)")
     p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
     {"fetch": fetch, "daily": daily, "merge": merge, "transcribe": transcribe_run, "publish": publish, "check": check,
