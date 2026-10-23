@@ -43,11 +43,19 @@ def check(args) -> None:
     print(f"[check] {args.file} ok")
 
 
+def links(args) -> None:
+    from .links import fill
+    for eid, (yt, lu) in fill(Path(args.run), ROOT / "sources.yaml").items():
+        print(f"[links] {eid} youtube={yt or '-'} listen={lu or '-'}")
+
+
 def render_report(args) -> None:
     from . import notion, ranked, report
 
     try:
-        data = report.validate(json.loads(Path(args.report).read_text()), "report")
+        data = json.loads(Path(args.report).read_text())
+        report.attach_links(data, Path(args.report).parent)
+        data = report.validate(data, "report")
     except ranked.RankedError as exc:
         sys.exit(f"[report] invalid: {exc}")
     out = Path(args.out or Path(args.report).with_name("report.md"))
@@ -140,6 +148,8 @@ def main(argv=None):
     ti.add_argument("--date", default="yesterday",
                     help="run date to check: yesterday (default; TMTB lands ~2:40 PM PT, check next morning), today, or YYYY-MM-DD")
     ti.add_argument("--days", type=float, default=4)
+    lk = sub.add_parser("links", help="resolve youtube_url (verified) and listen_url (Apple/Spotify/episode page) into selected.json")
+    lk.add_argument("run")
     p = sub.add_parser("publish", help="validate ranked.json and render the digest")
     p.add_argument("ranked")
     p.add_argument("--out")
@@ -147,7 +157,7 @@ def main(argv=None):
     p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
     {"fetch": fetch, "daily": daily, "merge": merge, "transcribe": transcribe_run, "publish": publish, "check": check,
-     "report": render_report, "tmtb-import": tmtb_import}[args.cmd](args)
+     "report": render_report, "tmtb-import": tmtb_import, "links": links}[args.cmd](args)
 
 
 if __name__ == "__main__":

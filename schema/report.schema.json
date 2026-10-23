@@ -27,7 +27,9 @@
       "type": "array", "minItems": 3, "maxItems": 3,
       "items": {"type": "object", "required": ["episode_id", "headline", "show", "guests"], "additionalProperties": false,
                 "properties": {"episode_id": {"type": "string"}, "headline": {"type": "string"}, "show": {"type": "string"},
-                               "guests": {"type": "string"}}}
+                               "guests": {"type": "string"},
+                               "youtube_url": {"type": "string", "pattern": "^https://(www\\.)?(youtube\\.com/watch\\?v=|youtu\\.be/)"},
+                               "listen_url": {"type": "string", "description": "clickable episode page (YouTube/Spotify/Apple preferred); never mp3/tracking"}}}
     },
     "episodes": {
       "type": "array", "minItems": 3, "maxItems": 3,
@@ -39,6 +41,8 @@
           "episode_id": {"type": "string"},
           "headline": {"type": "string"},
           "url": {"type": "string"},
+          "youtube_url": {"type": "string", "pattern": "^https://(www\\.)?(youtube\\.com/watch\\?v=|youtu\\.be/)"},
+          "listen_url": {"type": "string"},
           "signal": {"type": "array", "minItems": 3, "maxItems": 4,
                      "items": {"$ref": "#/$defs/cite"}},
           "interests": {"type": "string", "description": "optional: guest's stakes when talking their book"},

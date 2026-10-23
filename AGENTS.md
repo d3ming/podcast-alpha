@@ -38,6 +38,9 @@ has no faster-whisper). `daily` checks this up front and pins the queued `transc
    `--run runs/<name>` or `--date YYYY-MM-DD` to override; `-` reads stdin). Writes `seeds.json`, `missed.json`, `missed.md`; fetch or whisper anything
    important in `missed.md` before selecting. Paste or export the email body; never scrape Substack.
 3. Select exactly 3 strict picks (novel exec/investor signal, no recaps or news shows): follow `prompts/select.md`, write `runs/<name>/selected.json`, check with `podcast-alpha check selected <file>`.
+3b. Links: find each pick's YouTube video by web search and set `youtube_url`/`youtube_published` in `selected.json` only on a
+   title-or-guest + date match (never guess), then run `podcast-alpha links runs/<name>` (verifies via oEmbed, adds Apple/
+   Spotify/episode-page `listen_url`; see `prompts/report.md`). yt-dlp search from the Mac is manual-only.
 4. Report: follow `prompts/report.md`, write `runs/<name>/report.json` (`schema/report.schema.json`).
 5. Render/publish: `podcast-alpha report runs/<name>/report.json` writes `report.md`; with `NOTION_TOKEN` and a parent page
    (`NOTION_PARENT_PAGE_ID`, else `notion_parent_page_id` in `publish.yaml`, else `--notion-parent`) it also creates

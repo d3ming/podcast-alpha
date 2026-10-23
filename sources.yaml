@@ -6,7 +6,7 @@ sources:
   - {id: dwarkesh, name: Dwarkesh Podcast, tier: 1, rss: "https://api.substack.com/feed/podcast/69345.rss", topics: [ai]}
   - {id: odd-lots, name: Odd Lots, tier: 1, rss: "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/8a94442e-5a74-4fa2-8b8d-ae27003a8d6b/982f5071-765c-403d-969d-ae27003a8d83/podcast.rss", topics: [macro, markets]}
   - {id: acquired, name: Acquired, tier: 1, rss: "https://feeds.transistor.fm/acquired", topics: [business]}
-  - {id: no-priors, name: No Priors, tier: 1, rss: "https://feeds.megaphone.fm/nopriors", topics: [ai]}
+  - {id: no-priors, name: No Priors, tier: 1, rss: "https://feeds.megaphone.fm/nopriors", youtube_channel_id: UCSI7h9hydQ40K5MJHnCrQvw, topics: [ai]}
   - {id: invest-like-the-best, name: Invest Like the Best, tier: 1, rss: "https://feeds.megaphone.fm/investlikethebest", topics: [investing]}
   - {id: semianalysis, name: SemiAnalysis, tier: 1, rss: "https://anchor.fm/s/10fbee758/podcast/rss", youtube: "https://www.youtube.com/@SemiAnalysis/videos", topics: [semis, ai-infra]}
   - {id: bg2, name: BG2 Pod, tier: 1, rss: "https://anchor.fm/s/f06c2370/podcast/rss", youtube: "https://www.youtube.com/@Bg2Pod/videos", topics: [tech, investing]}
@@ -37,7 +37,7 @@ sources:
   - {id: squawk-pod, name: "Squawk Pod", tier: 1, rss: "https://feeds.simplecast.com/VHAcgaw_", topics: [markets], news: true}
   - {id: marketing-operators, name: "Marketing Operators", tier: 1, rss: "https://anchor.fm/s/f23bffe0/podcast/rss", topics: [ads, ecommerce]}
   - {id: big-technology, name: "Big Technology Podcast", tier: 1, rss: "https://feeds.megaphone.fm/LI3617121267", topics: [tech]}
-  - {id: all-in, name: "All-In Podcast", tier: 1, rss: "https://rss.libsyn.com/shows/254861/destinations/1928300.xml", topics: [tech, investing]}
+  - {id: all-in, name: "All-In Podcast", tier: 1, rss: "https://rss.libsyn.com/shows/254861/destinations/1928300.xml", youtube_channel_id: UCESLZhusAkFfsNsApnjF_Cg, topics: [tech, investing]}
   - {id: the-circuit, name: "The Circuit", tier: 1, rss: "https://feeds.transistor.fm/the-circuit", topics: [semis]}
   - {id: a16z-show, name: "The a16z Show", tier: 1, rss: "https://feeds.simplecast.com/JGE3yC0V", topics: [tech]}
   - {id: interconnects, name: "Interconnects", tier: 2, rss: "https://api.substack.com/feed/podcast/48206.rss", topics: [ai]}

@@ -21,6 +21,7 @@ class Source:
     preferred_source: str = "rss"
     fallback: list[str] = field(default_factory=list)
     transcripts: list[str] = field(default_factory=list)
+    youtube_channel_id: str | None = None  # UC... id; links uses the free channel RSS to find the episode video
     news: bool = False  # daily news/market-recap show: whispered last (or skipped with --skip-news)
 
     @property

@@ -103,7 +103,7 @@ def test_notion_parent_env_then_config(tmp_path, monkeypatch):
 
 def test_daily_people_first(tmp_path, monkeypatch):
     def mk(id, title, src):
-        return Episode(id=id, source_id=src, source_name="S", tier=1, title=title, url="u", published_at=NOW)
+        return Episode(id=id, source_id=src, source_name="S", tier=1, title=title, url="u", published_at=datetime.now(timezone.utc))
 
     order = []
     monkeypatch.setattr(fetch_mod, "discover", lambda *a, **k: order.append("channels") or
