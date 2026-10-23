@@ -27,7 +27,9 @@ def publish(args) -> None:
         print(f"[publish] warning: {w}")
     if errors:
         sys.exit("\n".join(f"[publish] invalid: {e}" for e in errors))
-    md = render(data, top_claims=args.top_claims, top=args.top)
+    from . import showlinks
+
+    md = render(data, top_claims=args.top_claims, top=args.top, show_links=showlinks.by_name(ROOT / "show_links.yaml"))
     out = Path(args.out or Path(args.ranked).with_name(f"digest-{data['week_of']}.md"))
     out.write_text(md)
     print(f"[publish] {out}")
@@ -102,8 +104,22 @@ def links(args) -> None:
         sys.exit(f"[links] invalid: {exc}")
     if errors := report.verify("selected", data, Path(args.run)):
         sys.exit("\n".join(f"[links] invalid: {e}" for e in errors))
-    for eid, (yt, lu) in fill(Path(args.run), ROOT / "sources.yaml", ytsearch=args.ytsearch).items():
+    for eid, (yt, lu) in fill(Path(args.run), ROOT / "sources.yaml", ytsearch=args.ytsearch,
+                                                                   show_links=ROOT / "show_links.yaml").items():
         print(f"[links] {eid} youtube={yt or '-'} listen={lu or '-'}")
+
+
+def show_links(args) -> None:
+    from . import showlinks
+
+    path = Path(args.file)
+    changed = showlinks.fill(Path(args.sources), path, set(args.only.split(",")) if args.only else None,
+                              ytsearch=args.ytsearch)
+    data = showlinks.load(path)
+    for sid, got in changed.items():
+        missing = [f for f in showlinks.FIELDS if not data[sid][f]]
+        print(f"[show-links] {sid}: filled {', '.join(got) or '-'}; still blank {', '.join(missing) or '-'}")
+    print(f"[show-links] {path} ({len(data)} shows). Edit any value to correct it; filled values are never overwritten.")
 
 
 def render_report(args) -> None:
@@ -222,6 +238,11 @@ def main(argv=None):
     lk.add_argument("run")
     lk.add_argument("--ytsearch", action="store_true",
                     help="last resort when no YouTube video was found: yt-dlp ytsearch5 (run from a Mac/residential IP; results still oEmbed-verified)")
+    sl = sub.add_parser("show-links", help="fill blank per-podcast links (site, YouTube, Apple, Spotify) in show_links.yaml")
+    sl.add_argument("--sources", default=str(ROOT / "sources.yaml"))
+    sl.add_argument("--file", default=str(ROOT / "show_links.yaml"))
+    sl.add_argument("--only", help="comma-separated source ids")
+    sl.add_argument("--ytsearch", action="store_true", help="also search YouTube (yt-dlp) for blank channels; Mac/residential IP only")
     mk = sub.add_parser("mark", help="record a stage start/end timestamp in the run's manifest.json")
     mk.add_argument("stage", choices=["fetch", "transcribe", "select", "report", "publish"])
     mk.add_argument("event", choices=["start", "end"])
@@ -236,7 +257,7 @@ def main(argv=None):
     p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
     {"fetch": fetch, "daily": daily, "merge": merge, "transcribe": transcribe_run, "publish": publish, "check": check,
-     "report": render_report, "tmtb-import": tmtb_import, "links": links, "mark": mark, "stats": stats}[args.cmd](args)
+     "report": render_report, "tmtb-import": tmtb_import, "links": links, "show-links": show_links, "mark": mark, "stats": stats}[args.cmd](args)
 
 
 if __name__ == "__main__":

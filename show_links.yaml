@@ -1,0 +1,254 @@
+# Per-podcast links, keyed by the id in sources.yaml. Edit any value to correct it: `podcast-alpha show-links`
+# only fills blank fields and never overwrites one that is set. Empty string = not found yet.
+dwarkesh:
+  name: Dwarkesh Podcast
+  site: https://www.dwarkesh.com/podcast
+  youtube: https://www.youtube.com/channel/UCXl4i9dYBrFOabk0xGmbkRA
+  apple: https://podcasts.apple.com/us/podcast/dwarkesh-podcast/id1516093381
+  spotify: https://open.spotify.com/show/4JH4tybY1zX6e5hjCwU6gF
+odd-lots:
+  name: Odd Lots
+  site: https://bloomberg.com/podcasts/odd_lots
+  youtube: ''
+  apple: https://podcasts.apple.com/us/podcast/odd-lots/id1056200096
+  spotify: ''
+acquired:
+  name: Acquired
+  site: https://acquired.fm
+  youtube: https://www.youtube.com/@AcquiredFM
+  apple: https://podcasts.apple.com/us/podcast/acquired/id1050462261
+  spotify: https://open.spotify.com/show/7Fj0XEuUQLUqoMZQdsLXqp
+no-priors:
+  name: No Priors
+  site: ''
+  youtube: https://www.youtube.com/channel/UCSI7h9hydQ40K5MJHnCrQvw
+  apple: https://podcasts.apple.com/us/podcast/no-priors-artificial-intelligence-technology-startups/id1668002688
+  spotify: ''
+invest-like-the-best:
+  name: Invest Like the Best
+  site: https://colossus.com/
+  youtube: https://www.youtube.com/@ILTB_Podcast
+  apple: https://podcasts.apple.com/us/podcast/invest-like-the-best/id6807925823
+  spotify: ''
+semianalysis:
+  name: SemiAnalysis
+  site: https://rss.com/podcasts/semianalysis-weekly
+  youtube: https://www.youtube.com/@SemiAnalysis
+  apple: https://podcasts.apple.com/us/podcast/semianalysis-weekly/id1877544643
+  spotify: ''
+bg2:
+  name: BG2 Pod
+  site: https://www.bg2pod.com
+  youtube: https://www.youtube.com/@Bg2Pod
+  apple: https://podcasts.apple.com/us/podcast/bg2pod-with-brad-gerstner-and-bill-gurley/id1727278168
+  spotify: ''
+chip-stock-investor:
+  name: Chip Stock Investor
+  site: https://chipstockinvestor.com/
+  youtube: https://www.youtube.com/@ChipStockInvestor
+  apple: https://podcasts.apple.com/us/podcast/chip-stock-investor-podcast/id1690533965
+  spotify: ''
+ticker-symbol-you:
+  name: Ticker Symbol YOU
+  site: ''
+  youtube: https://www.youtube.com/@TickerSymbolYOU
+  apple: https://podcasts.apple.com/us/podcast/ticker-symbol-you/id1573243226
+  spotify: ''
+apple-events:
+  name: Apple Events
+  site: http://www.apple.com
+  youtube: https://www.youtube.com/channel/UCE_M8A5yxnLfW0KghEeajjw
+  apple: https://podcasts.apple.com/us/podcast/apple-events/id1473854035
+  spotify: ''
+berkshire-meetings:
+  name: Berkshire Hathaway Annual Meetings
+  site: https://podcasters.spotify.com/pod/show/brk-annual-meetings
+  youtube: ''
+  apple: https://podcasts.apple.com/us/podcast/berkshire-hathaway-annual-shareholder-meetings-since/id1445276006
+  spotify: https://open.spotify.com/show/4bQf9WvU22gUm9WbFfHL7a
+forward-future:
+  name: Forward Future Interviews
+  site: https://www.buzzsprout.com/2640889
+  youtube: ''
+  apple: https://podcasts.apple.com/us/podcast/forward-future-interviews/id6804878923
+  spotify: https://open.spotify.com/show/0Dh9ThY7AsAgAbIqAqFLug
+in-good-company:
+  name: In Good Company with Nicolai Tangen
+  site: https://shows.acast.com/in-good-company-with-nicolai-tangen
+  youtube: ''
+  apple: https://podcasts.apple.com/us/podcast/in-good-company-with-nicolai-tangen/id1614211565
+  spotify: ''
+semafor-future-proof:
+  name: Future Proof from Semafor Technology
+  site: https://www.semafor.com/
+  youtube: https://www.youtube.com/channel/UCtB4ylCuQW0ue8ACIsHmD1w
+  apple: https://podcasts.apple.com/us/podcast/future-proof-from-semafor-technology/id6819309503
+  spotify: ''
+sources-alex-heath:
+  name: Sources with Alex Heath
+  site: https://sources.news/podcast
+  youtube: https://www.youtube.com/channel/UCZluT_XrXg-PeREQ8yZ2PiQ
+  apple: https://podcasts.apple.com/us/podcast/sources-with-alex-heath/id1840154537
+  spotify: https://open.spotify.com/show/3p1KZvkbdx96VgFh8dP8Ao
+mts:
+  name: MTS
+  site: https://mts.now
+  youtube: https://www.youtube.com/channel/UClWkDGXEzsh77GAhs90wpXw
+  apple: https://podcasts.apple.com/us/podcast/mts/id1891088763
+  spotify: ''
+supply-chained:
+  name: Supply Chained
+  site: https://podcasters.spotify.com/pod/show/jon83
+  youtube: https://www.youtube.com/channel/UCuqKDp8uxinIM8ORIOLr0qw
+  apple: https://podcasts.apple.com/us/podcast/supply-chained/id1894962569
+  spotify: https://open.spotify.com/show/65X5CeC8GDY57OyfN7YDyO
+squawk-pod:
+  name: Squawk Pod
+  site: https://www.cnbc.com
+  youtube: ''
+  apple: https://podcasts.apple.com/us/podcast/squawk-pod/id1480890290
+  spotify: ''
+marketing-operators:
+  name: Marketing Operators
+  site: https://podcasters.spotify.com/pod/show/marketing-operators
+  youtube: https://www.youtube.com/channel/UCLCl2hY_E08Q9q2X1p6ouMA
+  apple: https://podcasts.apple.com/us/podcast/marketing-operators/id1739369446
+  spotify: https://open.spotify.com/show/23IMg6aJK1RcGOMeTA7VE4
+big-technology:
+  name: Big Technology Podcast
+  site: https://www.bigtechnology.com/
+  youtube: https://www.youtube.com/channel/UChF5O40UBqAc82I7-i5ig6A
+  apple: https://podcasts.apple.com/us/podcast/big-technology-podcast/id1522960417
+  spotify: https://open.spotify.com/show/3ZC2ltL2PjEgRItezSJ0Sz
+all-in:
+  name: All-In Podcast
+  site: http://allinchamathjason.libsyn.com/website
+  youtube: https://www.youtube.com/channel/UCESLZhusAkFfsNsApnjF_Cg
+  apple: https://podcasts.apple.com/us/podcast/the-all-in-podcast/id1525283536
+  spotify: ''
+the-circuit:
+  name: The Circuit
+  site: http://thecircuit.fm
+  youtube: https://www.youtube.com/channel/UC-9MY_Tqa9zKOb6oX2MG4IA
+  apple: https://podcasts.apple.com/us/podcast/the-circuit/id1661329711
+  spotify: https://open.spotify.com/show/36gVeeoYns1RBASPLhAYeJ
+a16z-show:
+  name: The a16z Show
+  site: https://a16z.simplecast.com
+  youtube: https://www.youtube.com/channel/UC9cn0TuPq4dnbTY-CBsm8XA
+  apple: https://podcasts.apple.com/us/podcast/the-a16z-show/id842818711
+  spotify: ''
+interconnects:
+  name: Interconnects
+  site: https://www.interconnects.ai/podcast
+  youtube: https://www.youtube.com/channel/UCMhPRKnK8S_ruoGSt3vm1sQ
+  apple: https://podcasts.apple.com/us/podcast/interconnects/id1719552353
+  spotify: https://open.spotify.com/show/6XNzfJULeVxR7SneeesDUs
+semi-doped:
+  name: Semi Doped
+  site: http://semidoped.fm
+  youtube: https://www.youtube.com/channel/UCqIzK82kDT3zpA5OcPDg3Rg
+  apple: https://podcasts.apple.com/us/podcast/semi-doped/id1866707196
+  spotify: ''
+sourcery:
+  name: Sourcery
+  site: https://www.sourcery.vc
+  youtube: https://youtube.com/@sourceryvc
+  apple: https://podcasts.apple.com/us/podcast/sourcery/id1738124704
+  spotify: https://open.spotify.com/show/2Ni3Tese9CtZa3oxpCjgTg
+wsj-tech-news-briefing:
+  name: WSJ Tech News Briefing
+  site: https://www.wsj.com/podcasts/tech-news-briefing
+  youtube: ''
+  apple: https://podcasts.apple.com/us/podcast/wsj-tech-news-briefing/id74844126
+  spotify: ''
+cheeky-pint:
+  name: Cheeky Pint
+  site: ''
+  youtube: https://www.youtube.com/channel/UCXi7Hg2nSB40ujzM2CMtF-Q
+  apple: https://podcasts.apple.com/us/podcast/cheeky-pint/id1821055332
+  spotify: ''
+david-senra:
+  name: David Senra
+  site: https://www.davidsenra.com
+  youtube: https://www.youtube.com/@davidsenra
+  apple: https://podcasts.apple.com/us/podcast/david-senra/id1836497887
+  spotify: https://open.spotify.com/show/7jVjHrQJCbgruHkhrFi94A
+training-data:
+  name: Training Data
+  site: https://www.sequoiacap.com/
+  youtube: ''
+  apple: https://podcasts.apple.com/us/podcast/training-data/id1750736528
+  spotify: ''
+thursdai:
+  name: ThursdAI
+  site: https://sub.thursdai.news/podcast
+  youtube: https://www.youtube.com/channel/UCHvm5vA2Rey8ukVdpEXb-jg
+  apple: https://podcasts.apple.com/us/podcast/thursdai-the-top-ai-news-from-the-past-week/id1698613329
+  spotify: https://open.spotify.com/show/2J3lqMPD0BUI0bF9KJYKc1
+20vc:
+  name: The Twenty Minute VC
+  site: http://www.thetwentyminutevc.com/
+  youtube: ''
+  apple: https://podcasts.apple.com/us/podcast/the-twenty-minute-vc-20vc-venture-capital-startup/id958230465
+  spotify: https://open.spotify.com/show/3j2KMcZTtgTNBKwtZBMHvl
+lennys-podcast:
+  name: Lenny's Podcast
+  site: https://www.lennysnewsletter.com/podcast
+  youtube: https://www.youtube.com/channel/UC6t1O76G0jYXOAoYCm153dA
+  apple: https://podcasts.apple.com/us/podcast/lennys-podcast-product-career-growth/id1627920305
+  spotify: https://open.spotify.com/show/0IIunA06qMtrcQLfypTooj
+monetary-matters:
+  name: Monetary Matters with Jack Farley
+  site: ''
+  youtube: https://www.youtube.com/channel/UCeyqw1Ns_cnhSJh5XvXPWgw
+  apple: https://podcasts.apple.com/us/podcast/monetary-matters-with-jack-farley/id1769093906
+  spotify: ''
+cnbc-halftime:
+  name: CNBC Halftime Report
+  site: https://www.cnbc.com
+  youtube: ''
+  apple: https://podcasts.apple.com/us/podcast/halftime-report/id1524487980
+  spotify: ''
+cnbc-squawk-street:
+  name: CNBC Squawk on the Street
+  site: https://www.cnbc.com
+  youtube: https://www.youtube.com/channel/UCvJJ_dzjViJCoLf5uKUTwoA
+  apple: https://podcasts.apple.com/us/podcast/squawk-on-the-street/id1475116211
+  spotify: ''
+cnbc-power-lunch:
+  name: CNBC Power Lunch
+  site: https://www.cnbc.com
+  youtube: https://www.youtube.com/channel/UCvJJ_dzjViJCoLf5uKUTwoA
+  apple: https://podcasts.apple.com/us/podcast/power-lunch/id1617296333
+  spotify: ''
+confession-partovi:
+  name: Confession with Ali Partovi
+  site: https://neo.com/
+  youtube: https://www.youtube.com/channel/UCrdXAV0MERgRzBl9dIat6rw
+  apple: https://podcasts.apple.com/us/podcast/confession-with-ali-partovi/id6815872901
+  spotify: ''
+deep-view:
+  name: 'The Deep View: Conversations'
+  site: https://thedeepview.com
+  youtube: https://www.youtube.com/@thedeepviewai
+  apple: https://podcasts.apple.com/us/podcast/the-deep-view-conversations/id1769262461
+  spotify: ''
+pioneers-of-ai:
+  name: Pioneers of AI
+  site: https://art19.com/shows/pioneers-of-ai
+  youtube: https://www.youtube.com/channel/UCsZwYD6b7hse6O9SIclwYEA
+  apple: https://podcasts.apple.com/us/podcast/pioneers-of-ai/id1763085968
+  spotify: ''
+tbpn:
+  name: TBPN
+  site: https://tbpn.com
+  youtube: https://youtube.com/@tbpnlive
+  apple: https://podcasts.apple.com/us/podcast/tbpn/id1772360235
+  spotify: https://open.spotify.com/show/2L6WMqY3GUPCGBD0dX6p00
+plain-english:
+  name: Plain English with Derek Thompson
+  site: https://www.theringer.com/
+  youtube: https://www.youtube.com/channel/UCoOUW7SiXzLbc_O3nSDOBYA
+  apple: https://podcasts.apple.com/us/podcast/plain-english-with-derek-thompson/id1594471023
+  spotify: ''

@@ -13,7 +13,15 @@ def link(title: str, url: str) -> str:
     return f"[{title}]({url})" if url.strip() else title
 
 
-def render(data: dict, top_claims: int = 3, top: int | None = None) -> str:
+def show_line(links: dict | None) -> str:
+    """`Show: Site · YouTube · Apple · Spotify` from show_links.yaml; blank fields are left out."""
+    parts = [f"[{label}]({links[key]})" for key, label in (("site", "Site"), ("youtube", "YouTube"), ("apple", "Apple"), ("spotify", "Spotify"))
+             if links and links.get(key)]
+    return "Show: " + " · ".join(parts) if parts else ""
+
+
+def render(data: dict, top_claims: int = 3, top: int | None = None, show_links: dict | None = None) -> str:
+    show_links = show_links or {}
     eps = data["episodes"][:top] if top else data["episodes"]
     shown = f"Top {len(eps)} of {len(data['episodes'])} ranked episodes" if len(eps) < len(data["episodes"]) else f"Episodes: {len(eps)}"
     lines = [
@@ -33,6 +41,8 @@ def render(data: dict, top_claims: int = 3, top: int | None = None) -> str:
     for e in eps:
         lines += [f"## {e['rank']}. {e['title']} · {e['score']}/10", "",
                   f"{e['source']} (T{e['tier']}) · {e['published'][:10]}", "", e["reason"], ""]
+        if (sl := show_line(show_links.get(e["source"].lower()))):
+            lines += [sl, ""]
         if not e["claims"]:
             lines += ["_No claims._", ""]
             continue

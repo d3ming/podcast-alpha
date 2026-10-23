@@ -21,6 +21,9 @@ has no faster-whisper). `daily` checks this up front and pins the queued `transc
 - Manifest `url` is the episode page (feed item link, else show page; never a tracking mp3); `audio_url` is the enclosure.
 - People with common names take `context:` in `people.yaml`; iTunes hits in sports/fiction/etc. genres are dropped.
 - `runs/<name>/` (git-ignored): `manifest.json`, one `.md` per episode, `transcribe.log`, then agent outputs.
+- `show_links.yaml`: per-podcast site, YouTube, Apple, Spotify links keyed by the `sources.yaml` id. Correct a link by editing it;
+  `podcast-alpha show-links` (`--ytsearch` on the Mac) only fills blanks and never overwrites. Run it after adding a source. `links` falls
+  back to a show's Apple/site page when no episode page is found; the weekly digest prints a `Show:` line from it.
 - `data/podcast_alpha.sqlite` dedupe DB. `prompts/` agent instructions. `schema/` JSON schemas.
 
 ## Daily loop

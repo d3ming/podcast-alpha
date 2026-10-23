@@ -85,6 +85,12 @@ Output format: [`schema/ranked.schema.json`](schema/ranked.schema.json).
 - If `NOTION_TOKEN` and a parent page id (`--notion-parent` or `NOTION_PARENT_PAGE_ID`) are set, it also creates the
   Notion page through the API. Otherwise Cain publishes the markdown with the Notion connector.
 
+## Show links
+
+`show_links.yaml` keeps one row per podcast (`site`, `youtube`, `apple`, `spotify`). `podcast-alpha show-links [--only id,id] [--ytsearch]`
+fills blank fields from the iTunes lookup, the feed's own link and the show's site (Spotify and YouTube are checked against the
+page title; hosting-platform pages are never scraped for YouTube). Edit any value to fix it: set values are never overwritten.
+
 ## Holdings
 
 `podcast_alpha/holdings.py` can fetch the folio JSON at run time so a bot can weigh relevance privately.

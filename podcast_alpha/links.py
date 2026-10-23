@@ -229,7 +229,7 @@ def sources_by_name(sources: Path) -> dict:
     return {s["name"].lower(): s for s in data.get("sources", []) if isinstance(s, dict) and s.get("name")}
 
 
-def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text, ytsearch: bool = False) -> dict:
+def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text, ytsearch: bool = False, show_links: Path | None = None) -> dict:
     """Write youtube_url (verified or empty) and listen_url (non-YouTube fallback) into selected.json and the manifest.
     Returns {episode_id: (youtube_url, listen_url)}."""
     sel_p, man_p = run_dir / "selected.json", run_dir / "manifest.json"
@@ -237,6 +237,8 @@ def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text, ytse
     man = json.loads(man_p.read_text()) if man_p.exists() else {"episodes": []}
     by_id = {e["episode_id"]: e for e in man.get("episodes", [])}
     srcs = sources_by_name(sources) if sources and sources.exists() else {}
+    from .showlinks import by_name as show_links_by_name
+    shows = show_links_by_name(show_links) if show_links else {}
     out, found = {}, {}
     for e in sel["episodes"]:
         m = by_id.get(e["episode_id"], {})
@@ -248,6 +250,9 @@ def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text, ytse
         yt = youtube(ep, src.get("youtube_channel_id"), fetch, ytsearch)
         lu = e.get("listen_url") if e.get("listen_url") and not bad_url(e["listen_url"]) and not yt_id(e["listen_url"]) else None
         lu = lu or resolve(ep, src.get("rss"), get)
+        if not lu and not yt:  # no episode page anywhere: the show's own Apple page (then site) beats nothing
+            sl = shows.get((e.get("show") or "").lower(), {})
+            lu = sl.get("apple") or sl.get("site") or None
         out[e["episode_id"]] = (yt, lu)
         for d in (e, m) if m else (e,):
             d.pop("youtube_url", None) if not yt else d.__setitem__("youtube_url", yt)
