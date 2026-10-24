@@ -14,6 +14,7 @@ from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
 GITHUB = "https://github.com/d3ming/podcast-alpha"
+SITE = "Wire"
 TIERS = {1: "Tier 1", 2: "Tier 2", 3: "Tier 3"}
 
 CSS = """\
@@ -108,7 +109,7 @@ def page(title: str, body: str, depth_nav: str = "", desc: str = "") -> str:
     return (f'<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{esc(title)}</title>{d}<link rel="stylesheet" href="/style.css"></head><body>'
-            f'<header class="site"><div class="wrap"><a class="brand" href="/">podcast-alpha</a><nav aria-label="Main">{links}</nav></div></header>'
+            f'<header class="site"><div class="wrap"><a class="brand" href="/">{SITE}</a><nav aria-label="Main">{links}</nav></div></header>'
             f'<main><div class="wrap">{body}</div></main>'
             f'<footer><div class="wrap">Claims come from podcast transcripts and are not investment advice. '
             f'<a href="/about.html">About</a> · <a href="/runs.json">runs.json</a> · <a href="/claims.jsonl">claims.jsonl</a> · '
@@ -255,7 +256,7 @@ def run_page(r: dict) -> str:
     notes = f'<p class="notice">{esc(r["notes"])}</p>' if r["notes"] else ""
     feed = f'<p class="meta">Agents: <a href="/runs/{esc(quote(r["name"]))}/claims.jsonl">claims.jsonl</a></p>'
     cards = "".join(episode_card(e, r["name"]) for e in r["episodes"])
-    return page(f'{r["name"]} · podcast-alpha',
+    return page(f'{r["name"]} · {SITE}',
                 f'{head}<p class="meta">{esc(r["kind"].title())} · {esc(r["date"])} · {" · ".join(bits)}</p>{notes}{feed}{ins}{cards}',
                 desc=f"{r['kind']} podcast intel for {r['date']}")
 
@@ -269,18 +270,18 @@ def run_list(runs: list[dict]) -> str:
 
 
 def index_page(runs: list[dict]) -> str:
-    intro = ('<h1>Podcast intel for investors</h1><p class="lede">Every day and week, an agent reads the podcasts that move '
-             'markets and keeps what is new: who said what, where, with a link to the exact moment. '
+    intro = ('<h1>Wire</h1><p class="lede">A daily and weekly digest of what executives and investors are saying, '
+             'starting with podcasts. An agent keeps what is new: who said what, where, with a link to the exact moment. '
              'Each claim is checked against the transcript.</p>')
     if not runs:
-        return page("podcast-alpha", intro + "<p>No runs published yet.</p>", "latest")
+        return page(SITE, intro + "<p>No runs published yet.</p>", "latest")
     r = runs[0]
     top = "".join(episode_card(e, r["name"], 3) for e in r["episodes"][:5])
     body = (f'{intro}<h2>Latest: <a href="/runs/{esc(quote(r["name"]))}/">{esc(r["name"])}</a></h2>'
             f'<p class="meta">{esc(r["kind"].title())} · {esc(r["date"])} · {len(r["episodes"])} episodes</p>{top}'
             f'<p><a href="/runs/{esc(quote(r["name"]))}/">All {len(r["episodes"])} episodes in this run</a></p>'
             f'<h2>All runs</h2>{run_list(runs)}')
-    return page("podcast-alpha", body, "latest", "Claims from investor podcasts, scored and linked to the moment.")
+    return page(SITE, body, "latest", "What executives and investors said, scored and linked to the moment.")
 
 
 def collect_tickers(runs: list[dict]) -> tuple[dict, dict]:
@@ -301,14 +302,14 @@ def tickers_index(pub: dict, priv: dict) -> str:
     if priv:
         names = ", ".join(f"{esc(n)} ({len(v)})" for n, v in sorted(priv.items(), key=lambda kv: (-len(kv[1]), kv[0])))
         p = f'<h2>Private companies</h2><p class="meta">{names}</p>'
-    return page("Tickers · podcast-alpha", f'<h1>Tickers</h1><p class="meta">Claims mentioning each listed company, across runs.</p>'
+    return page(f"Tickers · {SITE}", f'<h1>Tickers</h1><p class="meta">Claims mentioning each listed company, across runs.</p>'
                 f'<ul class="tickers">{chips}</ul>{p}', "tickers")
 
 
 def ticker_page(sym: str, claims: list[dict]) -> str:
     claims = sorted(claims, key=lambda c: (str(c.get("date") or c.get("published") or ""), c.get("score") or 0), reverse=True)
     li = "".join(claim_li(c, show_ep=True) for c in claims)
-    return page(f"{sym} · podcast-alpha", f'<h1>{esc(sym)}</h1><p class="meta">{len(claims)} claims</p><ul class="claims">{li}</ul>', "tickers")
+    return page(f"{sym} · {SITE}", f'<h1>{esc(sym)}</h1><p class="meta">{len(claims)} claims</p><ul class="claims">{li}</ul>', "tickers")
 
 
 def about_page(runs: list[dict]) -> str:
@@ -326,7 +327,7 @@ def about_page(runs: list[dict]) -> str:
 <li><code>/runs/&lt;run&gt;/claims.jsonl</code>: one run's claims. Each claim has <code>speaker</code>, <code>timestamp</code>, <code>tickers</code> and a <code>link</code> that opens the source at that moment.</li>
 </ul>
 <p class="meta">{len(runs)} runs published.</p>"""
-    return page("About · podcast-alpha", body, "about")
+    return page(f"About · {SITE}", body, "about")
 
 
 # ---------------------------------------------------------------- build
