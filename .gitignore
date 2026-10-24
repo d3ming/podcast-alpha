@@ -10,3 +10,5 @@ runs/
 .runs-worktree/
 logs/
 dist/
+.vercel
+.env*
