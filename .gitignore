@@ -9,3 +9,4 @@ runs/
 .pytest_cache/
 .runs-worktree/
 logs/
+dist/

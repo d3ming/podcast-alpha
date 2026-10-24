@@ -166,3 +166,10 @@ otherwise the audio is whispered.
 `podcast_alpha/holdings.py` can fetch a portfolio JSON at run time (`PA_FOLIO_URL`; unset means no weighting) so an
 agent can weigh relevance privately. Holdings and weights never go into the repo, `ranked.json`, the digest or Notion;
 `publish` rejects them.
+
+## Website
+
+`podcast-alpha site [--out dist]` (or `python3 -m podcast_alpha.site`) renders `published/` into a static site: a home
+page with the latest run, one page per run, one page per ticker, an About page, and agent feeds (`/runs.json`,
+`/claims.jsonl`, `/runs/<run>/claims.jsonl`). It reads the committed JSON only, uses the standard library, and makes
+no network calls. `vercel.json` sets the build command and `dist` as the output; `dist/` is git-ignored.

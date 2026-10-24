@@ -1,0 +1,6 @@
+{
+  "buildCommand": "python3 -m podcast_alpha.site --out dist",
+  "outputDirectory": "dist",
+  "framework": null,
+  "cleanUrls": true
+}

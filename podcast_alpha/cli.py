@@ -504,6 +504,9 @@ def main(argv=None):
     tdp.add_argument("--run-name", help="override the run name (default: today's local date)")
     tdp.add_argument("--runs", default=str(ROOT / "runs"))
     tdp.add_argument("--json", action="store_true")
+    si = sub.add_parser("site", help="build the static website from published/ into --out (default dist)")
+    si.add_argument("--out", default="dist")
+    si.add_argument("--published", default=str(ROOT / "published"))
     sub.add_parser("doctor", help="check python, whisper, ffmpeg, yt-dlp, network, NOTION_TOKEN, data/ and disk")
     for sp in (t, d):
         sp.add_argument("--backend", choices=BACKEND_CHOICES, help="whisper backend (env PA_WHISPER_BACKEND; default auto)")
@@ -533,6 +536,10 @@ def main(argv=None):
            "heartbeat": deliver.heartbeat_cmd, "status": status_cmd, "today": today_cmd, "doctor": doctor_cmd}
     if args.cmd in own:
         return own[args.cmd](args)
+    if args.cmd == "site":
+        from . import site
+
+        return site.main(["--out", args.out, "--published", args.published])
     {"fetch": fetch, "daily": daily, "merge": merge, "transcribe": transcribe_run, "publish": publish, "check": check,
      "report": render_report, "tmtb-import": tmtb_import, "links": links, "show-links": show_links, "rank-prep": rank_prep, "rank-merge": rank_merge, "transcript-links": transcript_links_cmd, "export-published": export_published, "mark": mark, "stats": stats, "library": library_cmd}[args.cmd](args)
 

@@ -53,6 +53,7 @@ From there an agent follows [`prompts/daily.md`](prompts/daily.md): it loops on 
 | Daily report | `runs/<date>/report.md`, Notion | Key insights, then three essential episodes with cited claims |
 | Weekly digest | `runs/<week>/digest-*.md`, Notion | Top 15 episodes of the week, scored, with claims and links |
 | Claims feed | [`published/<run>/claims.jsonl`](published) | Every claim: speaker, timestamp, tickers, deep link. Committed to git |
+| Website | `podcast-alpha site` → `dist/` | Static pages per run and ticker, plus `/runs.json` and `/claims.jsonl` for agents |
 | Library | `data/library.sqlite` | Claims plus full-text transcript search: `podcast-alpha library query --ticker NVDA` |
 
 An investor agent should start with [docs/agent-guide.md](docs/agent-guide.md).
