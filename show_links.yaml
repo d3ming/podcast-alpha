@@ -47,7 +47,7 @@ chip-stock-investor:
   site: https://chipstockinvestor.com/
   youtube: https://www.youtube.com/@ChipStockInvestor
   apple: https://podcasts.apple.com/us/podcast/chip-stock-investor-podcast/id1690533965
-  spotify: ''
+  spotify: https://open.spotify.com/show/4QSHBYlMjTwwy1qK2mlM1F
 ticker-symbol-you:
   name: Ticker Symbol YOU
   site: ''
@@ -95,11 +95,11 @@ mts:
   site: https://mts.now
   youtube: https://www.youtube.com/channel/UClWkDGXEzsh77GAhs90wpXw
   apple: https://podcasts.apple.com/us/podcast/mts/id1891088763
-  spotify: ''
+  spotify: https://open.spotify.com/show/4HUNNmV1pjV7CW6Lphm1rM
 supply-chained:
   name: Supply Chained
   site: https://podcasters.spotify.com/pod/show/jon83
-  youtube: https://www.youtube.com/channel/UCuqKDp8uxinIM8ORIOLr0qw
+  youtube: ''
   apple: https://podcasts.apple.com/us/podcast/supply-chained/id1894962569
   spotify: https://open.spotify.com/show/65X5CeC8GDY57OyfN7YDyO
 squawk-pod:
@@ -117,7 +117,7 @@ marketing-operators:
 big-technology:
   name: Big Technology Podcast
   site: https://www.bigtechnology.com/
-  youtube: https://www.youtube.com/channel/UChF5O40UBqAc82I7-i5ig6A
+  youtube: ''
   apple: https://podcasts.apple.com/us/podcast/big-technology-podcast/id1522960417
   spotify: https://open.spotify.com/show/3ZC2ltL2PjEgRItezSJ0Sz
 all-in:
@@ -137,7 +137,7 @@ a16z-show:
   site: https://a16z.simplecast.com
   youtube: https://www.youtube.com/channel/UC9cn0TuPq4dnbTY-CBsm8XA
   apple: https://podcasts.apple.com/us/podcast/the-a16z-show/id842818711
-  spotify: ''
+  spotify: https://open.spotify.com/show/5bC65RDvs3oxnLyqqvkUYX
 interconnects:
   name: Interconnects
   site: https://www.interconnects.ai/podcast
@@ -167,7 +167,7 @@ cheeky-pint:
   site: ''
   youtube: https://www.youtube.com/channel/UCXi7Hg2nSB40ujzM2CMtF-Q
   apple: https://podcasts.apple.com/us/podcast/cheeky-pint/id1821055332
-  spotify: ''
+  spotify: https://open.spotify.com/show/2IHbGJJMpiFoz5YrvRfTFw
 david-senra:
   name: David Senra
   site: https://www.davidsenra.com
@@ -197,7 +197,7 @@ lennys-podcast:
   site: https://www.lennysnewsletter.com/podcast
   youtube: https://www.youtube.com/channel/UC6t1O76G0jYXOAoYCm153dA
   apple: https://podcasts.apple.com/us/podcast/lennys-podcast-product-career-growth/id1627920305
-  spotify: https://open.spotify.com/show/0IIunA06qMtrcQLfypTooj
+  spotify: https://open.spotify.com/show/2dR1MUZEHCOnz1LVfNac0j
 monetary-matters:
   name: Monetary Matters with Jack Farley
   site: ''

@@ -168,7 +168,9 @@ def get_transcript(ep, budget=None) -> tuple[list[dict] | None, str | None]:
             except Exception as exc:
                 print(f"[whisper] {ep.id}: {type(exc).__name__}")
                 continue
-            label = f"whisper ({round(used / 60)} min)"
+            from .whisper import label as whisper_label
+
+            label = whisper_label(used)
         elif m == "youtube_audio" and ep.youtube_id:
             from .whisper import transcribe_youtube
 
@@ -177,7 +179,9 @@ def get_transcript(ep, budget=None) -> tuple[list[dict] | None, str | None]:
             except Exception as exc:
                 print(f"[whisper] {ep.id}: {type(exc).__name__}")
                 continue
-            label = f"whisper ({round(used / 60)} min, youtube audio)"
+            from .whisper import label as whisper_label
+
+            label = whisper_label(used, ", youtube audio")
         elif m == "youtube_captions" and ep.youtube_id:
             segs, label = from_youtube(ep.youtube_id), "youtube-captions"
             if segs:

@@ -84,10 +84,10 @@ def test_transcribe_run_is_resumable(tmp_path, monkeypatch):
     transcribe_run(SimpleNamespace(run=str(run), minutes=600, per_episode=None, db=str(db), force=False))
     m = json.loads((run / "manifest.json").read_text())
     a, b, c = m["episodes"]
-    assert a["has_transcript"] and a["transcript_source"] == "whisper (2 min)" and b["whisper_error"] == "OSError"
+    assert a["has_transcript"] and a["transcript_source"] == "whisper base.en (2 min)" and b["whisper_error"] == "OSError"
     assert not c["has_transcript"] and m["whisper_minutes"] == 2.0 and not (run / "transcribe.lock").exists()
     md = (run / a["file"]).read_text()
-    assert "transcript_source: whisper (2 min)" in md and "[0:10:00] bye b" in md and "_No transcript" not in md
-    assert Store(db).db.execute("SELECT transcript_source FROM episodes WHERE id='rss:a'").fetchone()[0] == "whisper (2 min)"
+    assert "transcript_source: whisper base.en (2 min)" in md and "[0:10:00] bye b" in md and "_No transcript" not in md
+    assert Store(db).db.execute("SELECT transcript_source FROM episodes WHERE id='rss:a'").fetchone()[0] == "whisper base.en (2 min)"
     transcribe_run(SimpleNamespace(run=str(run), minutes=600, per_episode=None, db=None, force=False))
     assert calls == ["https://a.mp3", "https://b.mp3"]

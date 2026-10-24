@@ -43,7 +43,7 @@ def test_whisper_python_prefers_interpreter_with_faster_whisper(monkeypatch, tmp
     monkeypatch.setattr(fetch_mod.Path, "exists", lambda self: True)
     assert fetch_mod.whisper_python() == "/workspace/pa-venv/bin/python"
     monkeypatch.setattr(fetch_mod, "has_whisper", lambda p: False)
-    with pytest.raises(SystemExit, match="no interpreter with faster_whisper"):
+    with pytest.raises(SystemExit, match="no interpreter with mlx_whisper or faster_whisper"):
         fetch_mod.whisper_python()
 
 
@@ -68,7 +68,7 @@ def test_queue_uses_pinned_python(monkeypatch, tmp_path):
 def test_transcribe_preflight_and_stale_lock(monkeypatch, tmp_path):
     run = make_run(tmp_path / "r", [])
     monkeypatch.setattr(whisper, "available", lambda: False)
-    with pytest.raises(SystemExit, match="faster_whisper is not importable"):
+    with pytest.raises(SystemExit, match="neither mlx_whisper nor faster_whisper is importable"):
         fetch_mod.transcribe_run(targs(run))
     monkeypatch.setattr(whisper, "available", lambda: True)
     (run / "transcribe.lock").write_text("999999999")

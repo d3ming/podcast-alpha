@@ -136,13 +136,30 @@ def parse_itunes(person: Person, results: list[dict], now: datetime, days: int, 
     return out
 
 
-def from_itunes(person: Person, now: datetime, days: int) -> list[Episode]:
+ITUNES_RETRIES, ITUNES_BACKOFF = 4, 2.0
+
+
+def from_itunes(person: Person, now: datetime, days: int, get=None, sleep=None) -> list[Episode]:
+    """iTunes Search allows ~20 requests/min; searches run a few at a time, and 403/429/5xx wait (Retry-After, else doubling) and retry."""
+    import time
+
     import requests
 
-    r = requests.get("https://itunes.apple.com/search", timeout=30,
-                     params={"term": person.name, "media": "podcast", "entity": "podcastEpisode", "limit": 50})
-    r.raise_for_status()
-    return parse_itunes(person, r.json().get("results", []), now, days)
+    get, sleep = get or requests.get, sleep or time.sleep
+    for attempt in range(ITUNES_RETRIES):
+        r = get("https://itunes.apple.com/search", timeout=30,
+                params={"term": person.name, "media": "podcast", "entity": "podcastEpisode", "limit": 50})
+        if r.status_code in (403, 429) or r.status_code >= 500:
+            if attempt + 1 < ITUNES_RETRIES:
+                try:
+                    wait = float(r.headers.get("Retry-After", ""))
+                except ValueError:
+                    wait = ITUNES_BACKOFF * 2 ** attempt
+                sleep(min(wait, 30))
+                continue
+        r.raise_for_status()
+        return parse_itunes(person, r.json().get("results", []), now, days)
+    raise AssertionError("unreachable")
 
 
 def dedupe(channel_eps: list[Episode], person_eps: list[Episode], threshold: float = 0.8) -> list[Episode]:
@@ -184,21 +201,32 @@ FINDERS = {"itunes": from_itunes, "ytdlp": from_youtube_search}
 
 
 def feed_transcripts(eps: list[Episode], parse=None) -> int:
+    """Attach the feed's transcript tags to iTunes hits. Feeds are loaded side by side through feedcache (a feed already
+    fetched by this run's channel discovery is a 304 or a body-hash hit, not a second parse). `parse(url).entries` overrides."""
+    from concurrent.futures import ThreadPoolExecutor
+
     from .ingest import transcript_links
 
     if parse is None:
-        import feedparser
+        from .feedcache import load_feed
 
-        parse = feedparser.parse
-    found, feeds = 0, {}
+        entries_of = lambda url: load_feed(url)["entries"]
+    else:
+        entries_of = lambda url: parse(url).entries
+    urls = list(dict.fromkeys(e.feed_url for e in eps if e.feed_url and not e.transcript_urls))
+
+    def load(url):
+        try:
+            return {canonical_id(x.get("id") or x.get("guid"), None, x.get("link")): x for x in entries_of(url)}
+        except Exception:
+            return {}
+
+    with ThreadPoolExecutor(min(8, max(1, len(urls)))) as pool:
+        feeds = dict(zip(urls, pool.map(load, urls)))
+    found = 0
     for e in eps:
         if not e.feed_url or e.transcript_urls:
             continue
-        if e.feed_url not in feeds:
-            try:
-                feeds[e.feed_url] = {canonical_id(x.get("id") or x.get("guid"), None, x.get("link")): x for x in parse(e.feed_url).entries}
-            except Exception:
-                feeds[e.feed_url] = {}
         entry = feeds[e.feed_url].get(e.id)
         if entry is not None:
             e.transcript_urls = transcript_links(entry) or None
@@ -207,20 +235,31 @@ def feed_transcripts(eps: list[Episode], parse=None) -> int:
 
 
 def discover_people(people: list[Person], now: datetime, days: int, channel_eps: list[Episode], per_person: int = 3,
-                    only: tuple[str, ...] | None = None) -> tuple[list[Episode], dict]:
+                    only: tuple[str, ...] | None = None, workers: int = 3) -> tuple[list[Episode], dict]:
+    """Searches run `workers` at a time (iTunes allows ~20/min); results are merged in the original person/source order."""
+    from concurrent.futures import ThreadPoolExecutor
+
     found, counts, errors, skipped = [], {}, [], set()
-    for p in sorted(people, key=lambda p: p.priority != "core"):
-        for src in only or p.order:
-            try:
-                eps = FINDERS[src](p, now, days)
-            except LookupError as exc:
-                skipped.add(f"{src}: {exc}")
-                continue
-            except Exception as exc:
-                errors.append(f"{p.name}/{src}: {type(exc).__name__}")
-                continue
-            found += [replace(e, via=src, methods=p.transcripts or None) for e in eps[:per_person]]
-            print(f"[people] {p.name}/{src}: {len(eps)}")
+    jobs = [(p, src) for p in sorted(people, key=lambda p: p.priority != "core") for src in only or p.order]
+
+    def search(job):
+        p, src = job
+        try:
+            return FINDERS[src](p, now, days), None
+        except Exception as exc:
+            return None, exc
+
+    with ThreadPoolExecutor(max(1, min(workers, len(jobs)))) as pool:
+        results = list(pool.map(search, jobs))
+    for (p, src), (eps, exc) in zip(jobs, results):
+        if isinstance(exc, LookupError):
+            skipped.add(f"{src}: {exc}")
+            continue
+        if exc is not None:
+            errors.append(f"{p.name}/{src}: {type(exc).__name__}")
+            continue
+        found += [replace(e, via=src, methods=p.transcripts or None) for e in eps[:per_person]]
+        print(f"[people] {p.name}/{src}: {len(eps)}")
     kept = dedupe(channel_eps, found)
     for e in kept:
         counts[e.via] = counts.get(e.via, 0) + 1

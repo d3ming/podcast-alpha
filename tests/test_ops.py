@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -59,15 +60,15 @@ def test_triage_deterministic_top_n_keeps_core():
 
 
 def test_transcribe_whispers_only_triaged(monkeypatch, tmp_path):
-    run = make_run(tmp_path / "r", [ep("rss:a", "Founder interview on AI chips"), ep("rss:b", "Random chat"),
-                                    ep("rss:c", "CEO on guidance")])
+    eps = [ep("rss:a", "Founder interview on AI chips"), ep("rss:b", "Random chat"), ep("rss:c", "CEO on guidance")]
+    run = make_run(tmp_path / "r", [replace(e, tier=2) for e in eps])  # tier 2: the tier-1 floor would whisper all three
     monkeypatch.setattr(whisper, "available", lambda: True)
     calls = []
     monkeypatch.setattr(whisper, "transcribe", lambda url, b: calls.append(url) or (LONG, 180.0))
     fetch_mod.transcribe_run(targs(run, top=2, people=None))
     m = json.loads((run / "manifest.json").read_text())
     assert len(calls) == 2 and "https://cdn.example/rss:b.mp3" not in calls
-    assert m["triage"] == {"top": 2, "candidates": 3, "whisper": 2, "clips": {}}
+    assert m["triage"] == {"top": 2, "tier1_floor": True, "candidates": 3, "whisper": 2, "clips": {}}
     assert m["timing"]["transcribe"]["seconds"] >= 0
 
 

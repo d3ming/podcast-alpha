@@ -1,11 +1,20 @@
 [project]
 name = "podcast-alpha"
-version = "0.1.0"
+version = "0.2.0"
+description = "Turns investing podcasts into cited, transcript-checked claims for investors and their agents"
+readme = "README.md"
 requires-python = ">=3.10"
+keywords = ["podcasts", "transcription", "whisper", "investing", "llm-agents"]
 dependencies = ["feedparser>=6", "youtube-transcript-api>=1.0", "yt-dlp", "pyyaml", "requests", "jsonschema"]
+
+[project.urls]
+Homepage = "https://github.com/d3ming/podcast-alpha"
+Documentation = "https://github.com/d3ming/podcast-alpha/blob/main/docs/architecture.md"
+Changelog = "https://github.com/d3ming/podcast-alpha/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 whisper = ["faster-whisper>=1.2", "av<16"]
+mac = ["mlx-whisper"]  # Apple-silicon GPU backend; combine with whisper: .[dev,whisper,mac]
 dev = ["pytest"]
 
 [project.scripts]
@@ -13,3 +22,6 @@ podcast-alpha = "podcast_alpha.cli:main"
 
 [tool.setuptools]
 packages = ["podcast_alpha"]
+
+[tool.pytest.ini_options]
+filterwarnings = ["ignore::DeprecationWarning:feedparser"]

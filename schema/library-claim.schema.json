@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/d3ming/podcast-alpha/schema/library-claim.schema.json",
+  "title": "podcast-alpha library query output",
+  "description": "`library query --json` prints an array of claims (this schema's root). `library query --transcripts --json` prints an array of #/$defs/transcript_hit. `library export` writes one claim per line.",
+  "type": "array",
+  "items": {"$ref": "#/$defs/claim"},
+  "$defs": {
+    "link": {"type": ["string", "null"], "description": "Best URL for the moment: YouTube with &t=<seconds>s when a video is known, else the episode page."},
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["episode_id", "title", "show", "published", "date", "tier", "speaker", "timestamp", "text", "tickers",
+                   "novelty", "verifiable", "source", "run", "score", "url", "youtube_url", "transcript_url", "link", "transcript_path", "matched_by"],
+      "properties": {
+        "episode_id": {"type": "string"},
+        "title": {"type": ["string", "null"]},
+        "show": {"type": ["string", "null"]},
+        "published": {"type": ["string", "null"], "description": "Episode publish date, YYYY-MM-DD."},
+        "date": {"type": ["string", "null"], "description": "Date the claim is filed under (episode publish date, else run date); --since filters on this."},
+        "tier": {"type": ["integer", "null"], "enum": [1, 2, 3, null]},
+        "speaker": {"type": ["string", "null"]},
+        "timestamp": {"type": ["integer", "null"], "minimum": 0, "description": "Seconds from the start of the episode."},
+        "text": {"type": "string", "minLength": 1},
+        "tickers": {"type": "array", "items": {"type": "string"}, "description": "Upper-case tickers, or private:Name. Empty for report claims (not tagged)."},
+        "novelty": {"type": ["integer", "null"], "minimum": 0, "maximum": 3, "description": "Only on source=ranked."},
+        "verifiable": {"type": ["integer", "null"], "minimum": 0, "maximum": 3, "description": "Only on source=ranked."},
+        "source": {"enum": ["report", "ranked"], "description": "report = daily pick cite; ranked = weekly ranking claim."},
+        "run": {"type": "string"},
+        "score": {"type": ["integer", "null"], "minimum": 1, "maximum": 10, "description": "Weekly episode score; null for report claims."},
+        "url": {"type": ["string", "null"]},
+        "youtube_url": {"type": ["string", "null"]},
+        "transcript_url": {"type": ["string", "null"]},
+        "link": {"$ref": "#/$defs/link"},
+        "transcript_path": {"type": ["string", "null"], "description": "Local markdown transcript on the machine that ingested it."},
+        "matched_by": {"enum": ["tag", "text", null], "description": "With a ticker filter: tag = the claim is tagged with it; text = untagged claim whose text names the symbol (upper-case whole word of 3+ chars, or $SYM). null when no ticker filter was used."}
+      }
+    },
+    "transcript_hit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["episode_id", "title", "show", "published", "tier", "timestamp", "snippet", "url", "youtube_url", "transcript_url", "link", "transcript_path"],
+      "properties": {
+        "episode_id": {"type": "string"},
+        "title": {"type": ["string", "null"]},
+        "show": {"type": ["string", "null"]},
+        "published": {"type": ["string", "null"]},
+        "tier": {"type": ["integer", "null"]},
+        "timestamp": {"type": ["integer", "null"], "minimum": 0, "description": "Start of the matching ~60 s window, seconds."},
+        "snippet": {"type": "string", "description": "Matching words wrapped in **. Whisper/caption text: names may be misspelled."},
+        "url": {"type": ["string", "null"]},
+        "youtube_url": {"type": ["string", "null"]},
+        "transcript_url": {"type": ["string", "null"]},
+        "link": {"$ref": "#/$defs/link"},
+        "transcript_path": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

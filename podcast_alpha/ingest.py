@@ -112,16 +112,17 @@ def page_url(entry, audio: str | None, feed_link: str | None = None) -> str:
 
 
 def from_rss(src: Source, now: datetime, days: int, parsed=None) -> list[Episode]:
+    """Episodes in the window. Without `parsed`, the feed comes through feedcache (conditional GET, parse in a worker process)."""
+    from . import feedcache
+
     if parsed is None:
-        import feedparser
-        parsed = feedparser.parse(src.rss)
-    feed = parsed
-    status, bozo = getattr(parsed, "status", None) or 0, getattr(parsed, "bozo", False)
-    if not feed.entries and (bozo or status >= 400):
-        why = f"HTTP {status}" if status >= 400 else str(getattr(parsed, "bozo_exception", "") or "malformed feed")[:160]
-        raise ValueError(f"no entries from {src.rss}: {why}")
+        data = feedcache.load_feed(src.rss)
+    else:  # an already-parsed feedparser result (tests, callers that parsed it themselves)
+        data = feedcache.reduce_parsed(parsed)
+        if data["error"]:
+            raise ValueError(f"no entries from {src.rss}: {data['error']}")
     out = []
-    for e in feed.entries:
+    for e in data["entries"]:
         dt = parse_date(e.get("published") or e.get("updated"))
         if not dt or not in_window(dt, now, days):
             continue
@@ -129,7 +130,7 @@ def from_rss(src: Source, now: datetime, days: int, parsed=None) -> list[Episode
         out.append(Episode(
             id=canonical_id(e.get("id") or e.get("guid"), None, e.get("link")),
             source_id=src.id, source_name=src.name, tier=src.tier,
-            title=e.get("title", "").strip(), url=page_url(e, audio, (feed.get("feed") or {}).get("link")),
+            title=e.get("title", "").strip(), url=page_url(e, audio, data["link"]),
             published_at=dt, transcript_urls=transcript_links(e), audio_url=audio,
             description=e.get("summary", "")[:2000], duration=parse_duration(e.get("itunes_duration")),
         ))

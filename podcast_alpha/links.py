@@ -255,6 +255,137 @@ def apple_episode(show: str, title: str, feed: str | None = None, get=_get) -> s
     return None
 
 
+def apple_collection_id(url: str | None) -> str | None:
+    """Collection id from an Apple show URL (.../id1234567)."""
+    m = re.search(r"/id(\d+)", url or "")
+    return m.group(1) if m else None
+
+
+def is_homepage(url: str | None, site: str | None = None) -> bool:
+    """True when url is no episode page: empty path (https://theringer.com/) or the show's own site address."""
+    if not url:
+        return False
+    u = urllib.parse.urlparse(url.strip())
+    if not u.netloc:
+        return False
+    host = u.netloc.lower().removeprefix("www.")
+    if u.path in ("", "/") and not u.query:
+        return True
+    if site:
+        s = urllib.parse.urlparse(site.strip())
+        return host == s.netloc.lower().removeprefix("www.") and u.path.rstrip("/") == s.path.rstrip("/") and u.query == s.query
+    return False
+
+
+def itunes_episodes(collection_id: str, get=_get, cache: dict | None = None) -> list[dict]:
+    """Episodes of one Apple collection (free iTunes Lookup, up to 200). Cached per collection in `cache`; a failed
+    lookup is cached as empty so one run does not retry it for every episode."""
+    if cache is not None and collection_id in cache:
+        return cache[collection_id]
+    try:
+        res = get(f"https://itunes.apple.com/lookup?id={collection_id}&entity=podcastEpisode&limit=200").get("results", [])
+    except Exception:
+        res = []
+    eps = [r for r in res if r.get("wrapperType") == "podcastEpisode"]
+    if cache is not None:
+        cache[collection_id] = eps
+    return eps
+
+
+_TRACK_HOSTS = ("podtrac", "chartable", "pdst.fm", "chrt.fm", "op3.dev", "pscrb", "swap.fm", "podscribe", "claritaspod", "arttrk")
+_NUM_WORDS = {w: str(i) for i, w in enumerate("zero one two three four five six seven eight nine ten".split())}
+
+
+def audio_key(url: str | None) -> str | None:
+    """Comparable form of an enclosure URL: no query, no scheme, and tracking-redirect prefixes (podtrac, chartable, pdst,
+    op3...) cut off so the redirect and the publisher's own URL compare equal."""
+    if not url:
+        return None
+    u = url.split("#")[0].split("?")[0].lower()
+    u = u.split("://")[-1]  # nested redirect targets ("op3.dev/e/https://host/x.mp3")
+    parts = [p for p in u.split("/") if p]
+    while parts and any(t in parts[0] for t in _TRACK_HOSTS):
+        hosts = [i for i, p in enumerate(parts[1:], 1) if "." in p and not p.endswith(AUDIO_EXT)]
+        if not hosts:
+            break
+        parts = parts[hosts[0]:]
+    return "/".join(parts) or None
+
+
+def strict_similar(a: str, b: str) -> float:
+    """Title ratio without similar()'s containment shortcut: "Part 1" and "Part 1 and 2" are not the same."""
+    norm = lambda t: " ".join(re.sub(r"[^a-z0-9]+", " ", t.lower()).split())
+    a2, b2 = norm(a), norm(b)
+    return SequenceMatcher(None, a2, b2).ratio() if a2 and b2 else 0.0
+
+
+def _numbers(title: str) -> list[str]:
+    """Digit and number-word tokens (Part 1 / Part One, Oct 23, #214), sorted."""
+    toks = re.sub(r"[^a-z0-9]+", " ", title.lower()).split()
+    return sorted(_NUM_WORDS.get(t, t) for t in toks if t.isdigit() or t in _NUM_WORDS)
+
+
+def _same_episode(e: dict, ident: dict) -> bool:
+    """Identity match between an iTunes lookup row and a manifest row: guid hash (= manifest episode id), guid, enclosure."""
+    guid = e.get("episodeGuid")
+    if guid:
+        import hashlib
+
+        if ident.get("episode_id") == "rss:" + hashlib.sha1(guid.encode()).hexdigest()[:16] or ident.get("guid") == guid:
+            return True
+    ek, mk = audio_key(e.get("episodeUrl")), audio_key(ident.get("audio_url"))
+    return bool(ek and mk and ek == mk)
+
+
+def match_itunes_episode(title: str, published: str | None, eps: list[dict], min_sim: float = 0.9, max_days: int = 2,
+                         ident: dict | None = None) -> str | None:
+    """Apple episode page for the episode. First by identity (ident = manifest row with episode_id/guid/audio_url against
+    the lookup's episodeGuid/episodeUrl). Otherwise the title must match strictly (>= min_sim, no containment), carry the
+    same numbers (Part 1 vs 2, dates), and fall within max_days; ties go to the smallest date gap. No match: None."""
+    ok = [e for e in eps if not bad_url(e.get("trackViewUrl"))]
+    if ident:
+        for e in ok:
+            if _same_episode(e, ident):
+                return e["trackViewUrl"].split("&uo=")[0]
+    best, best_key = None, None
+    for e in ok:
+        gap = _days_apart(published, e.get("releaseDate"))
+        name = e.get("trackName", "")
+        sim = strict_similar(title, name)
+        if gap is None or gap > max_days or sim < min_sim or _numbers(title) != _numbers(name):
+            continue
+        key = (gap, -sim)
+        if best_key is None or key < best_key:
+            best, best_key = e, key
+    return best["trackViewUrl"].split("&uo=")[0] if best else None
+
+
+def apple_show_episode(title: str, published: str | None, apple_url: str | None, get=_get, cache: dict | None = None,
+                       ident: dict | None = None) -> str | None:
+    """Episode page on Apple Podcasts via the show's collection id from show_links.yaml."""
+    cid = apple_collection_id(apple_url)
+    return match_itunes_episode(title, published, itunes_episodes(cid, get, cache), ident=ident) if cid else None
+
+
+def episode_urls(episodes: list[dict], shows: dict, manifest: dict | None = None, get=_get) -> list[tuple]:
+    """For ranked-digest rows: when `url` is missing, a tracking/audio link or just the show homepage, replace it in place
+    with the manifest's listen_url, else the Apple episode page matched through the iTunes lookup. Returns [(rank, old, new)]."""
+    cache, changed = {}, []
+    for e in episodes:
+        row = shows.get((e.get("source") or "").lower(), {})
+        url = e.get("url") or ""
+        if url and not bad_url(url) and not is_homepage(url, row.get("site")):
+            continue
+        lu = ((manifest or {}).get(e.get("episode_id"), {}) or {}).get("listen_url")
+        if not (lu and not bad_url(lu) and not is_homepage(lu, row.get("site"))):
+            ident = {**((manifest or {}).get(e.get("episode_id"), {}) or {}), "episode_id": e.get("episode_id")}
+            lu = apple_show_episode(e.get("title", ""), e.get("published"), row.get("apple"), get, cache, ident)
+        if lu and lu != url:
+            e["url"] = lu
+            changed.append((e.get("rank"), url, lu))
+    return changed
+
+
 def resolve(ep: dict, feed: str | None = None, get=_get) -> str | None:
     """Non-YouTube listen page: existing Spotify/Apple page, Apple lookup, then feed episode page."""
     url = ep.get("url")
@@ -338,7 +469,7 @@ def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text, ytse
     srcs = sources_by_name(sources) if sources and sources.exists() else {}
     from .showlinks import by_name as show_links_by_name
     shows = show_links_by_name(show_links) if show_links else {}
-    out, found = {}, {}
+    out, found, itunes_cache = {}, {}, {}
     for e in sel["episodes"]:
         m = by_id.get(e["episode_id"], {})
         ep = {**m, **e, "youtube_id": e.get("youtube_id") or m.get("youtube_id")}
@@ -347,10 +478,16 @@ def fill(run_dir: Path, sources: Path | None = None, get=_get, fetch=_text, ytse
             ep["description"] = md.group(1) if md else ""
         src = srcs.get((e.get("show") or "").lower(), {})
         yt = youtube(ep, src.get("youtube_channel_id"), fetch, ytsearch)
-        lu = e.get("listen_url") if e.get("listen_url") and not bad_url(e["listen_url"]) and not yt_id(e["listen_url"]) else None
+        lu = e.get("listen_url") if e.get("listen_url") and not bad_url(e["listen_url"]) and not yt_id(e["listen_url"]) \
+            and not is_homepage(e["listen_url"]) else None
+        sl = shows.get((e.get("show") or "").lower(), {})
+        if not lu and (not ep.get("url") or bad_url(ep["url"]) or is_homepage(ep["url"], sl.get("site"))):
+            lu = apple_show_episode(ep.get("title", ""), ep.get("published"), sl.get("apple"), get, itunes_cache,
+                                    {**m, "episode_id": e["episode_id"]})
         lu = lu or resolve(ep, src.get("rss"), get)
+        if lu and is_homepage(lu, sl.get("site")):  # a show homepage is not an episode link
+            lu = None
         if not lu and not yt:  # no episode page anywhere: the show's own Apple page (then site) beats nothing
-            sl = shows.get((e.get("show") or "").lower(), {})
             lu = sl.get("apple") or sl.get("site") or None
         out[e["episode_id"]] = (yt, lu)
         for d in (e, m) if m else (e,):

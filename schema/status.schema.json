@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "podcast-alpha status --json: stage and single next action for one run folder",
+  "type": "object",
+  "required": ["run", "name", "kind", "exists", "stage", "stages", "blockers", "notes", "next"],
+  "additionalProperties": true,
+  "properties": {
+    "run": {"type": "string", "description": "run folder as given on the command line"},
+    "name": {"type": "string"},
+    "kind": {"enum": ["daily", "weekly"]},
+    "exists": {"type": "boolean"},
+    "stage": {"type": "string", "description": "first incomplete stage id, or 'done'"},
+    "stages": {
+      "type": "object",
+      "description": "daily: fetch, transcribe, select, links, report, render, publish; weekly: fetch, rank_prep, readers, rank_merge, publish",
+      "additionalProperties": {"enum": ["pending", "running", "failed", "done"]}
+    },
+    "blockers": {"type": "array", "items": {"type": "string"}, "description": "why the run cannot advance (running jobs, validation errors)"},
+    "notes": {"type": "array", "items": {"type": "string"}, "description": "non-blocking observations"},
+    "next": {
+      "type": "object",
+      "required": ["type", "summary"],
+      "properties": {
+        "type": {"enum": ["command", "agent", "wait", "done"], "description": "command: run it; agent: do the judgment work in `prompt`, then run `command` to check; wait: re-run status later"},
+        "summary": {"type": "string"},
+        "command": {"type": "string"},
+        "prompt": {"type": "string", "description": "prompt file to follow, relative to the repo root"}
+      }
+    },
+    "episodes": {"type": "object", "properties": {"total": {"type": "integer"}, "transcribed": {"type": "integer"}}},
+    "transcribe": {
+      "type": "object",
+      "required": ["state", "transcribed", "total", "whisper_pending", "audio_minutes_pending", "errors"],
+      "properties": {
+        "state": {"enum": ["not_started", "starting", "running", "finished", "interrupted"]},
+        "pid": {"type": ["string", "null"]},
+        "transcribed": {"type": "integer"}, "total": {"type": "integer"},
+        "whisper_pending": {"type": "integer"}, "audio_minutes_pending": {"type": "integer"}, "errors": {"type": "integer"}
+      }
+    },
+    "optional": {"type": "object", "properties": {"seeds": {"type": "boolean"}, "missed": {"type": "boolean"}}},
+    "readers": {"type": "object", "properties": {"batches": {"type": "integer"}, "done": {"type": "integer"}}},
+    "timing": {"type": "object"},
+    "recorded": {"type": "array", "items": {"type": "string"}, "description": "only with --record: timing marks written"}
+  }
+}

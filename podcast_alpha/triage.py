@@ -172,8 +172,10 @@ def backfill(eps: list[dict], run_dir) -> None:
 
 
 def triage(manifest: dict, people, top: int, now: datetime | None = None, is_news=lambda e: False,
-           run_dir=None) -> list[str]:
-    """Annotate every episode with triage {score, reasons, rank, whisper}; return ids picked for whisper."""
+           run_dir=None, tier1_floor: bool = True) -> list[str]:
+    """Annotate every episode with triage {score, reasons, rank, whisper}; return ids picked for whisper.
+    Picked: the top N, every core-person episode, and (tier1_floor) every tier-1 episode that is not news, a rerun,
+    a clip or off-domain. The transcribe budget still caps total audio, in rank order."""
     if now is None:
         try:
             now = datetime.fromisoformat(manifest["run_at"])
@@ -199,11 +201,18 @@ def triage(manifest: dict, people, top: int, now: datetime | None = None, is_new
             e["triage"]["reasons"].append(f"same show #{n + 1}")
     need = sorted((e for e in eps if not e.get("has_transcript") and e.get("audio_url")),
                   key=lambda e: (-e["triage"]["score"], e["episode_id"]))
-    picked = [e for e in need[:top]] + [e for e in need[top:] if core(e) and not e.get("rerun")
-                                         and e["episode_id"] not in clips
-                                         and not any(r.startswith("off-domain") for r in e["triage"]["reasons"])]
+    def eligible(e):  # outside the top N, still worth whispering
+        return not e.get("rerun") and e["episode_id"] not in clips and not any(r.startswith("off-domain") for r in e["triage"]["reasons"])
+
+    picked = [e for e in need[:top]] + [e for e in need[top:] if core(e) and eligible(e)]
+    if tier1_floor:
+        have = {e["episode_id"] for e in picked}
+        for e in need:
+            if e["episode_id"] not in have and e.get("tier") == 1 and eligible(e) and not is_news(e):
+                e["triage"]["reasons"].append("tier-1 floor")
+                picked.append(e)
     ids = {e["episode_id"] for e in picked}
     for rank, e in enumerate(need, 1):
         e["triage"].update(rank=rank, whisper=e["episode_id"] in ids)
-    manifest["triage"] = {"top": top, "candidates": len(need), "whisper": len(ids), "clips": clips}
+    manifest["triage"] = {"top": top, "tier1_floor": tier1_floor, "candidates": len(need), "whisper": len(ids), "clips": clips}
     return [e["episode_id"] for e in need if e["episode_id"] in ids]

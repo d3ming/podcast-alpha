@@ -70,7 +70,7 @@ def test_transcript_method_order_and_budget(monkeypatch):
     b = Budget(30, 20)
     segs, label = transcribe.get_transcript(ep(transcript_urls=[{"url": "t"}], audio_url="a",
                                                methods=["podcast_transcript", "whisper"]), b)
-    assert label == "whisper (10 min)" and b.used == 600
+    assert label == "whisper base.en (10 min)" and b.used == 600
     assert transcribe.get_transcript(ep(audio_url="a", methods=["whisper"])) == (None, None)
 
 
@@ -112,3 +112,53 @@ def test_page_url_falls_back_to_guid_then_links_then_feed():
     assert ingest.page_url({**entry, "id": "https://show.example/g"}, audio, show) == "https://show.example/g"
     # nothing usable and no feed link: empty, never invented
     assert ingest.page_url({"id": "urn:uuid:1"}, audio, None) == ""
+
+
+def test_feed_transcripts_loads_each_feed_once_and_survives_a_bad_one():
+    from podcast_alpha.ingest import canonical_id
+    entry = {"id": "g1", "podcast_transcript": {"url": "https://x/t.vtt", "type": "text/vtt"}, "links": []}
+    calls = []
+
+    def parse(url):
+        calls.append(url)
+        if url == "https://bad":
+            raise OSError("down")
+        return SimpleNamespace(entries=[entry])
+
+    eps = [ep(id=canonical_id("g1", None, None), feed_url=u) for u in ("https://feed", "https://feed", "https://bad")]
+    assert feed_transcripts(eps, parse=parse) == 2
+    assert sorted(calls) == ["https://bad", "https://feed"] and eps[2].transcript_urls is None
+
+
+def test_itunes_backs_off_on_429_and_gives_up_after_retries():
+    from datetime import datetime, timezone
+    from podcast_alpha.people import ITUNES_RETRIES, from_itunes
+
+    p, now, slept = Person("Jane Doe", "CEO", "core"), datetime(2026, 10, 23, tzinfo=timezone.utc), []
+    r429 = SimpleNamespace(status_code=429, headers={"Retry-After": "3"}, raise_for_status=lambda: (_ for _ in ()).throw(OSError("429")))
+    ok = SimpleNamespace(status_code=200, headers={}, raise_for_status=lambda: None, json=lambda: {"results": []})
+    seq = [r429, r429, ok]
+    assert from_itunes(p, now, 2, get=lambda *a, **k: seq.pop(0), sleep=slept.append) == [] and slept == [3.0, 3.0]
+    calls = []
+    with pytest.raises(OSError):
+        from_itunes(p, now, 2, get=lambda *a, **k: calls.append(1) or r429, sleep=lambda s: None)
+    assert len(calls) == ITUNES_RETRIES
+
+
+def test_discover_people_parallel_keeps_person_order_and_records_errors(monkeypatch):
+    import time
+    from datetime import datetime, timezone
+    from podcast_alpha import people as pm
+
+    now = datetime(2026, 10, 23, tzinfo=timezone.utc)
+    ps = [Person(n, "x", "core") for n in ("A", "B", "C", "D")]
+
+    def fake(p, now_, days):
+        time.sleep({"A": 0.15, "B": 0.0}.get(p.name, 0.03))
+        if p.name == "C":
+            raise RuntimeError("down")
+        return [ep(id=f"rss:{p.name}", title={"A": "Zebra economics", "B": "Quantum chips", "D": "Bond auction fallout"}.get(p.name, "x"), source_id=p.tag)]
+
+    monkeypatch.setitem(pm.FINDERS, "itunes", fake)
+    kept, info = pm.discover_people(ps, now, 2, [])
+    assert [e.id for e in kept] == ["rss:A", "rss:B", "rss:D"] and info["errors"] == ["C/itunes: RuntimeError"]

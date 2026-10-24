@@ -268,18 +268,16 @@ def record_failure(run_dir: Path, manifest: dict, e: dict, exc: Exception) -> di
 
 def transcribe_run(args) -> Path:
     from .store import Store
-    from .whisper import DownloadError, transcribe
+    from . import whisper
 
     run_dir = Path(args.run)
     path = run_dir / "manifest.json"
     budget, store = Budget(args.minutes, args.per_episode), Store(args.db) if args.db else None
     retry, reruns = getattr(args, "retry_errors", False), getattr(args, "include_reruns", False)
     min_chars, tried = getattr(args, "min_transcript_chars", MIN_TRANSCRIPT_CHARS), set()
-    from .whisper import available
-
-    if not available():
-        raise SystemExit(f"[transcribe] faster_whisper is not importable from {sys.executable}; "
-                         f"run with the venv that has it (e.g. /workspace/pa-venv/bin/podcast-alpha) or set PA_PYTHON")
+    if not whisper.available():
+        raise SystemExit(f"[transcribe] neither mlx_whisper nor faster_whisper is importable from {sys.executable}; "
+                         f"run with the venv that has one (e.g. /workspace/pa-venv/bin/podcast-alpha) or set PA_PYTHON")
     skip_news = getattr(args, "skip_news", False)
     lock = run_dir / "transcribe.lock"
     if lock.exists() and not args.force:
@@ -298,9 +296,12 @@ def transcribe_run(args) -> Path:
             from .triage import triage
 
             people = load_people(args.people) if getattr(args, "people", None) and Path(args.people).exists() else []
-            picked = triage(m, people, top, is_news=is_news, run_dir=run_dir)
-            log(f"triage: whisper {len(picked)} of {m['triage']['candidates']} (top {top} + core people)")
+            floor = not getattr(args, "no_tier1_floor", False)
+            picked = triage(m, people, top, is_news=is_news, run_dir=run_dir, tier1_floor=floor)
+            log(f"triage: whisper {len(picked)} of {m['triage']['candidates']} (top {top} + core people{' + tier-1 floor' if floor else ''})")
 
+    prefetched: dict[str, whisper.Prefetch] = {}  # one episode ahead: audio downloads while the current one transcribes
+    log(f"backend {whisper.backend()} model {whisper.model_name()}")
     try:
         update_manifest(path, start)
         while True:
@@ -319,20 +320,27 @@ def transcribe_run(args) -> Path:
             e.pop("whisper_error", None)
             log(f"start {e['episode_id']} ({len(todo)} left, {round(budget.left / 60)} min budget) {e['title'][:60]}")
             hit = reuse.find(e)
+            pf = prefetched.pop(e["episode_id"], None)
+            if whisper.PREFETCH and len(todo) > 1 and todo[1]["episode_id"] not in prefetched and budget.left >= 120 \
+                    and not reuse.find(todo[1]):
+                nxt = todo[1]
+                prefetched[nxt["episode_id"]] = whisper.Prefetch(nxt["audio_url"])
             try:
                 if hit:
                     segs, tsrc, used = hit[0], hit[1], 0.0
                     log(f"reuse {e['episode_id']} from {hit[2]}")
+                    if pf:
+                        pf.cleanup()
                     if hit[3]:
                         e["transcript_url"] = hit[3]
                 else:
                     t0 = time.monotonic()
-                    segs, used = transcribe(e["audio_url"], budget)
-                    tsrc = f"whisper ({round(used / 60)} min)"
+                    segs, used = whisper.transcribe_prefetched(pf, budget) if pf else whisper.transcribe(e["audio_url"], budget)
+                    tsrc = whisper.label(used)
                     log(f"whispered {round(used / 60)} audio min in {round(time.monotonic() - t0)} s wall")
             except Exception as exc:
                 segs, tsrc, used = None, None, 0.0
-                e["whisper_error"] = str(exc) if isinstance(exc, DownloadError) else type(exc).__name__
+                e["whisper_error"] = str(exc) if isinstance(exc, whisper.DownloadError) else type(exc).__name__
                 record_failure(run_dir, fails, e, exc)
             if segs and is_fallback(segs, min_chars):
                 segs, e["whisper_error"] = None, "short"
@@ -361,6 +369,8 @@ def transcribe_run(args) -> Path:
             update_manifest(path, apply)
             log(f"done {e['episode_id']} {tsrc or e.get('whisper_error')}")
     finally:
+        for pf in prefetched.values():
+            pf.cleanup()
         lock.unlink(missing_ok=True)
         try:
             update_manifest(path, lambda m: timing_apply(m, "transcribe", "end"))
@@ -493,7 +503,8 @@ def has_whisper(python: str) -> bool:
     import subprocess
 
     try:
-        return subprocess.run([python, "-c", "import faster_whisper, podcast_alpha"], capture_output=True, timeout=120,
+        code = "import sys, podcast_alpha.whisper as w; sys.exit(0 if w.available() else 1)"  # mlx or faster, per PA_WHISPER_BACKEND
+        return subprocess.run([python, "-c", code], capture_output=True, timeout=120,
                               cwd=ROOT).returncode == 0
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -505,12 +516,12 @@ def whisper_python() -> str:
     for c in dict.fromkeys(x for x in cands if x):
         if (c == sys.executable or Path(c).exists()) and has_whisper(c):
             return c
-    raise SystemExit("[daily] no interpreter with faster_whisper (tried " + ", ".join(x for x in cands if x) +
-                     "). Install with `pip install -e '.[whisper]'` or set PA_PYTHON; rerun with --no-transcribe to skip.")
+    raise SystemExit("[daily] no interpreter with mlx_whisper or faster_whisper (tried " + ", ".join(x for x in cands if x) +
+                     "). Install with `pip install -e '.[whisper]'` (Mac: `'.[whisper,mac]'`) or set PA_PYTHON; rerun with --no-transcribe to skip.")
 
 
 def queue_transcribe(run_dir: Path, minutes: float, db: str | None, python: str | None = None, skip_news: bool = False,
-                     top: int = 8, people: str | None = None) -> int:
+                     top: int = 8, people: str | None = None, tier1_floor: bool = True) -> int:
     import subprocess
 
     cmd = [python or whisper_python(), "-m", "podcast_alpha.cli", "transcribe", str(run_dir), "--minutes", str(minutes)]
@@ -518,10 +529,13 @@ def queue_transcribe(run_dir: Path, minutes: float, db: str | None, python: str 
         cmd += ["--db", db]
     if skip_news:
         cmd.append("--skip-news")
-    cmd += ["--top", str(top)] + (["--people", str(people)] if people else [])
+    cmd += ["--top", str(top)] + (["--people", str(people)] if people else []) + ([] if tier1_floor else ["--no-tier1-floor"])
     with open(run_dir / "transcribe.log", "a") as log_file:
         proc = subprocess.Popen(cmd, stdout=log_file, stderr=subprocess.STDOUT, start_new_session=True,
                                 cwd=Path(__file__).resolve().parent.parent)
+    # The child takes transcribe.lock a moment after it starts; until then `status` reads this marker as "starting".
+    # (Not the lock itself: the child refuses a lock naming a live pid.)
+    (run_dir / "transcribe.queued").write_text(str(proc.pid))
     return proc.pid
 
 
@@ -543,6 +557,7 @@ def daily(args) -> Path:
         print(f"[daily] transcribe later: /workspace/pa-venv/bin/podcast-alpha transcribe {run_dir}")
     else:
         pid = queue_transcribe(run_dir, args.minutes, args.db, python, getattr(args, "skip_news", False),
-                               getattr(args, "top", 8), getattr(args, "people", None))
+                               getattr(args, "top", 8), getattr(args, "people", None),
+                               not getattr(args, "no_tier1_floor", False))
         print(f"[daily] transcribe queued pid={pid} python={python} log={run_dir / 'transcribe.log'}")
     return run_dir
