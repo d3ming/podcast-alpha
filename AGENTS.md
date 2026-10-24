@@ -14,6 +14,14 @@ command and flag.
 Use the `podcast-alpha` from the venv that has a Whisper backend (`.venv/bin/podcast-alpha`, or
 `/workspace/pa-venv/bin/podcast-alpha` on the Linux server). On Apple silicon install `.[dev,whisper,mac]`.
 
+## Where it runs
+
+- Default: Dong's Mac, weekdays 04:00 via launchd, MLX whisper (`--backend mlx`; `auto` picks MLX on Apple silicon).
+  The Mac pushes each run (no audio) to the `runs` branch. See `deploy/mac/README.md`.
+- Box (Cain): `podcast-alpha fallback-check` at ~4:45 pulls the Mac's run, or runs `daily` here if the Mac's heartbeat
+  is missing, failed or stale. At 9:00, `pull-run --run <date>`, then select, report and publish.
+- Never commit run data to main. Only `deliver` writes the `runs` branch.
+
 ## Rules
 
 - **Public repo.** Commit `published/<run>/` after `report` or `publish` writes it. Never commit `runs/`, `data/`,

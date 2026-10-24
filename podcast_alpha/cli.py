@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .fetch import daily, fetch, merge, transcribe_run
+from .whisper import BACKEND_CHOICES
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -504,8 +505,32 @@ def main(argv=None):
     tdp.add_argument("--runs", default=str(ROOT / "runs"))
     tdp.add_argument("--json", action="store_true")
     sub.add_parser("doctor", help="check python, whisper, ffmpeg, yt-dlp, network, NOTION_TOKEN, data/ and disk")
+    for sp in (t, d):
+        sp.add_argument("--backend", choices=BACKEND_CHOICES, help="whisper backend (env PA_WHISPER_BACKEND; default auto)")
+    fc = sub.add_parser("fallback-check", help="box: if the Mac's run for --run is missing by now, run daily here; else pull it")
+    fc.add_argument("--run", help="run name (default: today's local date)")
+    fc.add_argument("--runs", default=str(ROOT / "runs"))
+    fc.add_argument("--stale-minutes", type=float, default=90, help="a 'running' heartbeat older than this counts as dead")
+    fc.add_argument("--dry-run", action="store_true", help="report the decision, do not run daily")
+    fc.add_argument("--hours", type=float, default=48)
+    dl = sub.add_parser("deliver", help="Mac: push a run (manifest, transcripts, heartbeat; no audio) to the `runs` branch")
+    dl.add_argument("--run", required=True)
+    dl.add_argument("--runs", default=str(ROOT / "runs"))
+    dl.add_argument("--no-push", action="store_true")
+    pr = sub.add_parser("pull-run", help="box: copy a delivered run from origin/runs into runs/<name>")
+    pr.add_argument("--run", required=True)
+    pr.add_argument("--runs", default=str(ROOT / "runs"))
+    hb = sub.add_parser("heartbeat", help="write runs/<name>/heartbeat.json (state, host, backend, time)")
+    hb.add_argument("--run", required=True)
+    hb.add_argument("--runs", default=str(ROOT / "runs"))
+    hb.add_argument("--state", required=True, choices=["running", "done", "failed"])
+    hb.add_argument("--note", default="")
     args = ap.parse_args(argv)
-    own = {"status": status_cmd, "today": today_cmd, "doctor": doctor_cmd}
+    if getattr(args, "backend", None):
+        os.environ["PA_WHISPER_BACKEND"] = args.backend  # the queued transcribe child inherits it
+    from . import deliver
+    own = {"fallback-check": deliver.fallback_check_cmd, "deliver": deliver.deliver_cmd, "pull-run": deliver.pull_run_cmd,
+           "heartbeat": deliver.heartbeat_cmd, "status": status_cmd, "today": today_cmd, "doctor": doctor_cmd}
     if args.cmd in own:
         return own[args.cmd](args)
     {"fetch": fetch, "daily": daily, "merge": merge, "transcribe": transcribe_run, "publish": publish, "check": check,

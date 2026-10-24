@@ -22,9 +22,10 @@ def check_whisper():
     from . import whisper
 
     if whisper.available():
-        return "ok", f"whisper backend importable from {sys.executable}"
+        be = whisper.backend()
+        return "ok", f"backend {be} ({whisper.model_name(be)}) importable from {sys.executable}"
     return "warn", ("no whisper backend importable here; `daily` looks for another interpreter (PA_PYTHON, .venv, "
-                    "/workspace/pa-venv) and fails if none has one. Install: pip install -e '.[whisper]'")
+                    "/workspace/pa-venv) and fails if none has one. Install: pip install -e '.[whisper]' (Mac: '.[whisper,mac]')")
 
 
 def check_ffmpeg():

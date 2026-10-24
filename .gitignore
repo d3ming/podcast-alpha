@@ -7,3 +7,5 @@ out/
 runs/
 .claude/settings.local.json
 .pytest_cache/
+.runs-worktree/
+logs/

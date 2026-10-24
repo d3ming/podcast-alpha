@@ -28,6 +28,8 @@ class Budget:
 
 DEFAULT_MODELS = {"mlx": "mlx-community/whisper-large-v3-turbo", "faster": "base.en"}
 MODULES = {"mlx": "mlx_whisper", "faster": "faster_whisper"}
+ALIASES = {"faster-whisper": "faster", "faster_whisper": "faster", "mlx-whisper": "mlx"}
+BACKEND_CHOICES = ["auto", "mlx", "faster-whisper", "faster"]
 PREFETCH = os.environ.get("PA_PREFETCH", "1") != "0"  # download the next episode while the current one transcribes
 
 
@@ -40,6 +42,7 @@ def has_module(name: str) -> bool:
 def backend() -> str:
     """PA_WHISPER_BACKEND=mlx|faster|auto. Auto: MLX on Apple silicon when mlx_whisper imports, else faster-whisper."""
     choice = os.environ.get("PA_WHISPER_BACKEND", "auto").strip().lower()
+    choice = ALIASES.get(choice, choice)
     if choice in MODULES:
         return choice
     if sys.platform == "darwin" and platform.machine() == "arm64" and has_module(MODULES["mlx"]):
