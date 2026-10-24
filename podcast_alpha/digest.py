@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .links import transcript_label
 from .transcribe import fmt_ts
 
 
@@ -41,6 +42,8 @@ def render(data: dict, top_claims: int = 3, top: int | None = None, show_links: 
     for e in eps:
         lines += [f"## {e['rank']}. {e['title']} · {e['score']}/10", "",
                   f"{e['source']} (T{e['tier']}) · {e['published'][:10]}", "", e["reason"], ""]
+        if (tu := e.get("transcript_url")):
+            lines += [f"Transcript: [{transcript_label(tu)}]({tu})", ""]
         if (sl := show_line(show_links.get(e["source"].lower()))):
             lines += [sl, ""]
         if not e["claims"]:

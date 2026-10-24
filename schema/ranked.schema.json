@@ -26,6 +26,7 @@
           "source": {"type": "string"},
           "tier": {"type": "integer", "enum": [1, 2, 3]},
           "published": {"type": "string", "description": "Publisher date, YYYY-MM-DD or ISO 8601."},
+          "transcript_url": {"type": "string", "pattern": "^https?://", "description": "Optional. Where a reader can open the transcript (publisher page or YouTube captions). publish fills it from the manifest."},
           "score": {"type": "integer", "minimum": 1, "maximum": 10},
           "reason": {"type": "string", "maxLength": 240, "description": "One line on why it earned this score."},
           "claims": {

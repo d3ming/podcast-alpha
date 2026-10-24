@@ -223,6 +223,57 @@ def resolve(ep: dict, feed: str | None = None, get=_get) -> str | None:
     return url if url and not bad_url(url) else None
 
 
+def transcript_link(row: dict) -> str | None:
+    """Hosted transcript for a manifest row: the recorded URL (any host, but never audio), else the YouTube video whose
+    captions were used."""
+    u = row.get("transcript_url") or ""
+    if u.startswith(("http://", "https://")) and not u.lower().split("?")[0].endswith(AUDIO_EXT):
+        return u
+    if "youtube-captions" in (row.get("transcript_source") or "") and row.get("youtube_id"):
+        return f"https://www.youtube.com/watch?v={row['youtube_id']}"
+    return None
+
+
+def transcript_label(url: str) -> str:
+    return "YouTube captions" if "youtube.com/" in url or "youtu.be/" in url else "Publisher transcript"
+
+
+def backfill_transcript_urls(run_dir: Path, sources: Path, parse=None) -> dict:
+    """Older manifests did not record where a podcast:transcript came from. Re-read each show's feed, match the episode by
+    title and store the transcript link. YouTube-caption rows need nothing (transcript_link derives them)."""
+    if parse is None:
+        import feedparser
+        parse = feedparser.parse
+    from .ingest import transcript_links
+
+    man_p = run_dir / "manifest.json"
+    rows = [r for r in json.loads(man_p.read_text()).get("episodes", [])
+            if r.get("transcript_source") == "podcast:transcript" and not r.get("transcript_url")]
+    import yaml
+    srcs = {s["id"]: s for s in yaml.safe_load(sources.read_text()).get("sources", []) if s.get("id")}
+    feeds, found = {}, {}
+    for r in rows:
+        src = srcs.get(r.get("source_tag"))
+        if not src:
+            continue
+        try:
+            entries = feeds.setdefault(src["rss"], parse(src["rss"]).entries)
+        except Exception:
+            continue
+        best = max(entries, key=lambda e: similar(r["title"], e.get("title", "")), default=None)
+        if best and similar(r["title"], best.get("title", "")) >= 0.9 and (links := transcript_links(best)):
+            found[r["episode_id"]] = links[0]["url"]
+
+    def apply(m):
+        for row in m.get("episodes", []):
+            if row["episode_id"] in found:
+                row["transcript_url"] = found[row["episode_id"]]
+
+    if found:
+        update_manifest(man_p, apply)
+    return {"missing": len(rows), "found": len(found)}
+
+
 def sources_by_name(sources: Path) -> dict:
     import yaml
     data = yaml.safe_load(sources.read_text()) or {}

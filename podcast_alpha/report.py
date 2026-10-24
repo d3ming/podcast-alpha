@@ -6,6 +6,7 @@ from pathlib import Path
 
 import jsonschema
 
+from . import links as _links
 from .digest import ts_link
 from .ranked import FORBIDDEN, RankedError
 
@@ -397,6 +398,12 @@ def attach_links(data: dict, run_dir: Path | None) -> dict:
     if run_dir and (run_dir / "selected.json").exists():
         sel = {e["episode_id"]: e for e in json.loads((run_dir / "selected.json").read_text())["episodes"]}
     eps = {e["episode_id"]: e for e in data["episodes"]}
+    man = {}
+    if run_dir and (run_dir / "manifest.json").exists():
+        man = {r["episode_id"]: r for r in json.loads((run_dir / "manifest.json").read_text()).get("episodes", [])}
+    for e in data["episodes"]:
+        if not e.get("transcript_url") and (u := _links.transcript_link(man.get(e["episode_id"], {}))):
+            e["transcript_url"] = u
     for e in data["essential"] + data["episodes"]:
         s, ep = sel.get(e["episode_id"], {}), eps.get(e["episode_id"], {})
         for k in ("youtube_url", "listen_url"):
@@ -427,7 +434,10 @@ def render(data: dict) -> str:
     lines += [essential_line(i, e) for i, e in enumerate(data["essential"], 1)]
     for ep in data["episodes"]:
         head = f"[{ep['headline']}]({u})" if (u := best_link(ep)) else ep["headline"]
-        lines += ["", "---", "", f"## {head}", "", "### THE SIGNAL", ""]
+        lines += ["", "---", "", f"## {head}"]
+        if (tu := ep.get("transcript_url")):
+            lines += ["", f"Transcript: [{_links.transcript_label(tu)}]({tu})"]
+        lines += ["", "### THE SIGNAL", ""]
         lines += [cite(c, best_link(ep) or ep["url"]) for c in ep["signal"]]
         if ep.get("interests"):
             lines += ["", f"**Interests to note:** {ep['interests']}"]

@@ -60,7 +60,7 @@ def write_episode(run_dir: Path, ep: Episode, segs, tsrc, min_chars: int = MIN_T
             "transcript_source": "fallback" if fallback else tsrc, "has_transcript": bool(segs) and not fallback,
             "fallback_text": fallback, "fallback_from": tsrc if fallback else None, "transcript_chars": transcript_chars(segs),
             "transcript_minutes": round(segs[-1]["start"] / 60) if segs and not fallback else 0, "audio_url": ep.audio_url,
-            "youtube_id": ep.youtube_id, "rerun": is_rerun(ep.title, ep.description), "duration": ep.duration,
+            "youtube_id": ep.youtube_id, "transcript_url": ep.transcript_url, "rerun": is_rerun(ep.title, ep.description), "duration": ep.duration,
             "description": re.sub(r"<[^>]+>", " ", ep.description or "")[:1500]}
 
 
@@ -299,6 +299,8 @@ def transcribe_run(args) -> Path:
                 if hit:
                     segs, tsrc, used = hit[0], hit[1], 0.0
                     log(f"reuse {e['episode_id']} from {hit[2]}")
+                    if hit[3]:
+                        e["transcript_url"] = hit[3]
                 else:
                     t0 = time.monotonic()
                     segs, used = transcribe(e["audio_url"], budget)
@@ -431,7 +433,7 @@ class ReuseIndex:
                 if md.exists():
                     segs = segments_from_md(md.read_text())
                     if segs and transcript_chars(segs) >= MIN_TRANSCRIPT_CHARS:
-                        return segs, old["transcript_source"], f"{d.name}/{old['file']}"
+                        return segs, old["transcript_source"], f"{d.name}/{old['file']}", old.get("transcript_url")
         return None
 
 

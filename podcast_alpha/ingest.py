@@ -24,6 +24,7 @@ class Episode:
     published_at: datetime
     youtube_id: str | None = None
     transcript_urls: list | None = None
+    transcript_url: str | None = None  # where a reader can open the transcript we used; set by get_transcript
     audio_url: str | None = None
     description: str = ""
     via: str = ""

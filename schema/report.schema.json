@@ -43,6 +43,7 @@
           "url": {"type": "string"},
           "youtube_url": {"type": "string", "pattern": "^https://(www\\.)?(youtube\\.com/watch\\?v=|youtu\\.be/)"},
           "listen_url": {"type": "string"},
+          "transcript_url": {"type": "string", "pattern": "^https?://", "description": "optional: hosted transcript (publisher page or YouTube); report filled from the manifest"},
           "signal": {"type": "array", "minItems": 3, "maxItems": 4,
                      "items": {"$ref": "#/$defs/cite"}},
           "interests": {"type": "string", "description": "optional: guest's stakes when talking their book"},

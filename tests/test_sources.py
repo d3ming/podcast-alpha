@@ -65,7 +65,7 @@ def test_youtube_audio_skips_without_whisper(monkeypatch):
 def test_transcript_method_order_and_budget(monkeypatch):
     import podcast_alpha.whisper as w
 
-    monkeypatch.setattr(transcribe, "from_rss_tag", lambda links: None)
+    monkeypatch.setattr(transcribe, "from_rss_tag", lambda links, used=None: None)
     monkeypatch.setattr(w, "transcribe", lambda url, b: (b.spend(600) or [{"start": 0, "speaker": None, "text": "x"}], 600))
     b = Budget(30, 20)
     segs, label = transcribe.get_transcript(ep(transcript_urls=[{"url": "t"}], audio_url="a",

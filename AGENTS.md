@@ -37,6 +37,8 @@ has no faster-whisper). `daily` checks this up front and pins the queued `transc
    are whispered last; `--skip-news` skips them. Transcripts already in another run folder (same episode id,
    enclosure, or show + title) are reused, not re-whispered. Episodes outside the window or flagged as replays/re-airs are excluded (`excluded` in the manifest).
    Rerunning with an existing `--run-name` only adds new episodes (it refuses while `transcribe.lock` names a live pid).
+   Each manifest row keeps `transcript_url` (publisher transcript, or the YouTube video whose captions were used); `report` and `publish`
+   link it from Notion. Older runs: `podcast-alpha transcript-links runs/<name>` backfills it from the feeds.
    `daily` prints feed errors; `manifest.sources` holds per-source {found, kept, error} and `stats` shows the latest run's errors.
    On the Mac add `--youtube-mirror` to caption episodes that have no feed transcript from the same episode on YouTube.
 2. Recall check, next morning: the TMTB email lands ~2:40 PM PT, after the 9 AM report, so check it against the

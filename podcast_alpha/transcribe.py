@@ -56,7 +56,7 @@ def parse_json(raw: str) -> list[dict]:
             for i in items if i.get("body") or i.get("text")]
 
 
-def from_rss_tag(links: list[dict]) -> list[dict] | None:
+def from_rss_tag(links: list[dict], used: list | None = None) -> list[dict] | None:
     import requests
 
     from .ingest import UA
@@ -70,6 +70,8 @@ def from_rss_tag(links: list[dict]) -> list[dict] | None:
         kind = (link.get("type") or "").lower()
         segs = parse_json(r.text) if "json" in kind else parse_cues(r.text)
         if segs:
+            if used is not None:
+                used.append(link["url"])
             return segs
     return None
 
@@ -130,7 +132,10 @@ def get_transcript(ep, budget=None) -> tuple[list[dict] | None, str | None]:
     for m in ep.methods or DEFAULT_METHODS:
         segs, label = None, m
         if m == "podcast_transcript" and ep.transcript_urls:
-            segs, label = from_rss_tag(ep.transcript_urls), "podcast:transcript"
+            used: list = []
+            segs, label = from_rss_tag(ep.transcript_urls, used), "podcast:transcript"
+            if segs and used:
+                ep.transcript_url = used[0]
         elif m == "whisper" and ep.audio_url and budget:
             from .whisper import transcribe
 
@@ -151,11 +156,14 @@ def get_transcript(ep, budget=None) -> tuple[list[dict] | None, str | None]:
             label = f"whisper ({round(used / 60)} min, youtube audio)"
         elif m == "youtube_captions" and ep.youtube_id:
             segs, label = from_youtube(ep.youtube_id), "youtube-captions"
+            if segs:
+                ep.transcript_url = f"https://www.youtube.com/watch?v={ep.youtube_id}"
         elif m == "youtube_mirror" and not ep.youtube_id:
             vid = find_youtube_mirror(ep.source_name, ep.title)
             segs = from_youtube(vid) if vid else None
             if segs:
                 ep.youtube_id, label = vid, "youtube-captions (mirror)"
+                ep.transcript_url = f"https://www.youtube.com/watch?v={vid}"
         if segs:
             return segs, label
     return None, None

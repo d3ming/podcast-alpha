@@ -20,9 +20,15 @@ def publish(args) -> None:
         warnings = ranked.validate(data)
     except ranked.RankedError as exc:
         sys.exit(f"[publish] invalid: {exc}")
-    from . import report
+    from . import links as links_mod, report
 
-    errors, grounding = report.ranked_verify(data, Path(args.ranked).resolve().parent)
+    run_dir = Path(args.ranked).resolve().parent
+    if (run_dir / "manifest.json").exists():
+        man = {r["episode_id"]: r for r in json.loads((run_dir / "manifest.json").read_text()).get("episodes", [])}
+        for e in data["episodes"]:
+            if not e.get("transcript_url") and (u := links_mod.transcript_link(man.get(e["episode_id"], {}))):
+                e["transcript_url"] = u
+    errors, grounding = report.ranked_verify(data, run_dir)
     for w in warnings + grounding:
         print(f"[publish] warning: {w}")
     if errors:
@@ -107,6 +113,13 @@ def links(args) -> None:
     for eid, (yt, lu) in fill(Path(args.run), ROOT / "sources.yaml", ytsearch=args.ytsearch,
                                                                    show_links=ROOT / "show_links.yaml").items():
         print(f"[links] {eid} youtube={yt or '-'} listen={lu or '-'}")
+
+
+def transcript_links_cmd(args) -> None:
+    from .links import backfill_transcript_urls
+
+    r = backfill_transcript_urls(Path(args.run), Path(args.sources))
+    print(f"[transcript-links] {r['found']} of {r['missing']} publisher transcripts linked in {args.run}")
 
 
 def show_links(args) -> None:
@@ -238,6 +251,9 @@ def main(argv=None):
     lk.add_argument("run")
     lk.add_argument("--ytsearch", action="store_true",
                     help="last resort when no YouTube video was found: yt-dlp ytsearch5 (run from a Mac/residential IP; results still oEmbed-verified)")
+    tl = sub.add_parser("transcript-links", help="record the hosted transcript URL for older manifests (re-reads the feeds)")
+    tl.add_argument("run")
+    tl.add_argument("--sources", default=str(ROOT / "sources.yaml"))
     sl = sub.add_parser("show-links", help="fill blank per-podcast links (site, YouTube, Apple, Spotify) in show_links.yaml")
     sl.add_argument("--sources", default=str(ROOT / "sources.yaml"))
     sl.add_argument("--file", default=str(ROOT / "show_links.yaml"))
@@ -257,7 +273,7 @@ def main(argv=None):
     p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
     {"fetch": fetch, "daily": daily, "merge": merge, "transcribe": transcribe_run, "publish": publish, "check": check,
-     "report": render_report, "tmtb-import": tmtb_import, "links": links, "show-links": show_links, "mark": mark, "stats": stats}[args.cmd](args)
+     "report": render_report, "tmtb-import": tmtb_import, "links": links, "show-links": show_links, "transcript-links": transcript_links_cmd, "mark": mark, "stats": stats}[args.cmd](args)
 
 
 if __name__ == "__main__":
