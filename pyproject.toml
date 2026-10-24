@@ -3,6 +3,8 @@ name = "podcast-alpha"
 version = "0.2.0"
 description = "Turns investing podcasts into cited, transcript-checked claims for investors and their agents"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 keywords = ["podcasts", "transcription", "whisper", "investing", "llm-agents"]
 dependencies = ["feedparser>=6", "youtube-transcript-api>=1.0", "yt-dlp", "pyyaml", "requests", "jsonschema"]

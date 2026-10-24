@@ -79,3 +79,8 @@ An investor agent should start with [docs/agent-guide.md](docs/agent-guide.md).
 Claims are checked against transcripts, not against filings or prices. Whisper does not label speakers, so speaker
 names come from the agent. Video-only shows and YouTube captions need a residential IP address, because YouTube blocks
 most data-center addresses.
+
+## License
+
+[MIT](LICENSE). The code is MIT; the podcasts belong to their creators. Transcripts are never committed, and published
+claims are short paraphrases with a link back to the source.
