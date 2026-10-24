@@ -1,0 +1,921 @@
+[
+ {
+  "episode_id": "rss:4c7c25fb5eb3305a",
+  "title": "Shifting Sentiment and Sliding Semis: The Investment Committee's Strategy 10/23/26",
+  "source": "CNBC Halftime Report",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://www.cnbc.com",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:50dd1e7ee244c379",
+  "title": "OpenAI’s Next Round, SpaceX’s Big Plans, & Reforming the MBA Program 10/23/26",
+  "source": "Squawk Pod",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://www.cnbc.com",
+  "youtube_id": "nhSAkURPTkY",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:0f121ffa496b69cf",
+  "title": "Traditional Aerospace Supply Chains Are Cooked | Blake Scholl",
+  "source": "MTS",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://podcasters.spotify.com/pod/show/mts-production/episodes/Traditional-Aerospace-Supply-Chains-Are-Cooked--Blake-Scholl-e3quik3",
+  "youtube_id": "u83GCh5Eg8U",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:226a253412970382",
+  "title": "RF Over Plastic Is a Third Option Between Copper and Optics: Point2's Sean Park",
+  "source": "Semi Doped",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "http://semidoped.fm",
+  "transcript_url": "https://www.buzzsprout.com/2570635/20008637/transcript.vtt",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:5c20ae4f25e0928f",
+  "title": "Ep. 040 - ASML Is Building a Hybrid Bonding Tool, and Its Patents Show How (AI Supply Chain) | Jordan Nanos, Howie, Sherry Zhang",
+  "source": "SemiAnalysis",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://podcasters.spotify.com/pod/show/jordan-nanos/episodes/Ep--040---ASML-Is-Building-a-Hybrid-Bonding-Tool--and-Its-Patents-Show-How-AI-Supply-Chain--Jordan-Nanos--Howie--Sherry-Zhang-e3qulph",
+  "youtube_id": "4WCasOsS5-4",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:213af08a03a667f4",
+  "title": "Democratizing Security for the Agentic Web with CloudFlare CTO Dane Knecht",
+  "source": "No Priors",
+  "tier": 1,
+  "published": "2026-10-23",
+  "youtube_id": "6VprwfSc4Xk",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:1f3da6006f9116a3",
+  "title": "Amazon CEO Andy Jassy on the $220 Billion AI Buildout",
+  "source": "The a16z Show",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://a16z.simplecast.com/episodes/amazon-ceo-220-billion-still-cant-meet-ai-demand-3QzhqLQK",
+  "youtube_id": "-YMMRQ1qscI",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:f97f15bfcc2edd19",
+  "title": "The AI Story Wall Street Doesn't Want to Hear",
+  "source": "Plain English with Derek Thompson",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://www.theringer.com/",
+  "youtube_id": "e7F1AvDsn0k",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:1cfd802d1c781608",
+  "title": "The Forgotten Godmother of Economic Literature",
+  "source": "Odd Lots",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://omny.fm/shows/odd-lots/odd-lots-the-forgotten-godmother-of-economic-literature-podcast",
+  "transcript_url": "https://api.omny.fm/orgs/e73c998e-6e60-432f-8610-ae210140c5b1/clips/99473588-d4a5-4d5e-bdd6-b4eb013c526e/transcript?format=TextWithTimestamps&t=1792775033",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:e2848d006ac974e5",
+  "title": "US Must Reshore AI Drug Discovery Infrastructure | Kevin Weil",
+  "source": "MTS",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://podcasters.spotify.com/pod/show/mts-production/episodes/US-Must-Reshore-AI-Drug-Discovery-Infrastructure--Kevin-Weil-e3qufl6",
+  "youtube_id": "_rG0rG5Nd5w",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:cb5924023cc59d66",
+  "title": "Friday Wrap-Up: Lessons from Google’s Former CEO and Europe’s AI Regulation Problem",
+  "source": "In Good Company with Nicolai Tangen",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://shows.acast.com/in-good-company-with-nicolai-tangen/episodes/friday-wrap-up-lessons-from-googles-former-ceo-and-europes-a",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:37737563e5129458",
+  "title": "AI Gateway Token Traffic Growing 140X Year Over Year | Aghi Marietti",
+  "source": "MTS",
+  "tier": 1,
+  "published": "2026-10-23",
+  "url": "https://podcasters.spotify.com/pod/show/mts-production/episodes/AI-Gateway-Token-Traffic-Growing-140X-Year-Over-Year--Aghi-Marietti-e3qudc8",
+  "youtube_id": "lEcT1VvKIis",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:ccf6d4c779460b41",
+  "title": "Matthew Prince on PHP2Shell, iPhone Duo Early Reactions, Meta Unveils New Class C Stock | Matthew Prince, Kevin Weil, MC Lader, Dillon Baxter, Richard Starson, Brian Manning",
+  "source": "TBPN",
+  "tier": 1,
+  "published": "2026-10-22",
+  "url": "https://share.transistor.fm/s/3dd855a5",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:71902cdbce8a9750",
+  "title": "The AI Race Deepens as Access to Capital Shrinks: Your Next Move 10/22/26",
+  "source": "CNBC Halftime Report",
+  "tier": 1,
+  "published": "2026-10-22",
+  "url": "https://www.cnbc.com",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:7c13c01967b26580",
+  "title": "The Nasdaq’s AI IPOs, Tesla’s Q3, Gloomy Economic Sentiment 10/22/26",
+  "source": "Squawk Pod",
+  "tier": 1,
+  "published": "2026-10-22",
+  "url": "https://www.cnbc.com",
+  "youtube_id": "4CuPIw1hu54",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:de31778ef519b4e6",
+  "title": "The Frontier Ideas a16z Wants to Fund | Marc Andreessen, Ben Horowitz & Chris Dixon",
+  "source": "The a16z Show",
+  "tier": 1,
+  "published": "2026-10-22",
+  "url": "https://a16z.simplecast.com/episodes/tbc-gRs50MgP",
+  "youtube_id": "-9XQMHhpypc",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:796f1f36e688d262",
+  "title": "What will computer chips look like in 2045?",
+  "source": "Dwarkesh Podcast",
+  "tier": 1,
+  "published": "2026-10-22",
+  "url": "https://www.dwarkesh.com/p/intel-tour",
+  "youtube_id": "frYSOKvNiiE",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:e0c431dec2e86bfa",
+  "title": "The New Apex Predator: CrowdStrike CEO George Kurtz on Adversaries Armed With AI Agents",
+  "source": "No Priors",
+  "tier": 1,
+  "published": "2026-10-22",
+  "youtube_id": "PST8yesYOSo",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:b089b84f29ad42c1",
+  "title": "Bhaskar Sunkara Thinks the Market Has a Place Under Socialism",
+  "source": "Odd Lots",
+  "tier": 1,
+  "published": "2026-10-22",
+  "url": "https://omny.fm/shows/odd-lots/bhaskar-sunkara-thinks-the-market-has-a-place-under-socialism",
+  "transcript_url": "https://api.omny.fm/orgs/e73c998e-6e60-432f-8610-ae210140c5b1/clips/a0e15df4-4a62-4b81-bbf5-b4ea00ed7a3c/transcript?format=TextWithTimestamps&t=1792593217",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:36bc766ab0e7ccec",
+  "title": "Arvind Krishna & Nikesh Arora: Quantum Threat, Open vs Frontier AI, AI Cyber Warfare & SaaS Collapse",
+  "source": "All-In Podcast",
+  "tier": 1,
+  "published": "2026-10-21",
+  "url": "https://allinchamathjason.libsyn.com/arvind-krishna-nikesh-arora-quantum-threat-open-vs-frontier-ai-ai-cyber-warfare-saas-collapse",
+  "youtube_id": "yzk44lz-RGI",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:eb6c20f1c6671af4",
+  "title": "Will the AI Trade Resume? The Investment Committee Weighs in 10/21/26",
+  "source": "CNBC Halftime Report",
+  "tier": 1,
+  "published": "2026-10-21",
+  "url": "https://www.cnbc.com",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:3d3c46952a726258",
+  "title": "Satya Nadella on chasing frontier labs, security, “SI,” & succession at Microsoft",
+  "source": "Future Proof from Semafor Technology",
+  "tier": 1,
+  "published": "2026-10-21",
+  "url": "https://www.semafor.com/",
+  "youtube_id": "CUgS4y4XiNY",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:e7d9356319a35813",
+  "title": "Musk Floats Mega-Merger, United CEO on Airfares & Fuel 10/21/26",
+  "source": "Squawk Pod",
+  "tier": 1,
+  "published": "2026-10-21",
+  "url": "https://www.cnbc.com",
+  "youtube_id": "n0Nu6TbDJe0",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:cd44123a1d227ebf",
+  "title": "Sundar Pichai on Gemini 4 and the AI compute crunch",
+  "source": "Sources with Alex Heath",
+  "tier": 1,
+  "published": "2026-10-21",
+  "url": "https://sources.news/p/sundar-pichai-gemini-4-google-other-bets",
+  "youtube_id": "fJBSNEFdm8c",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:f2c2930d13eca36f",
+  "title": "Sam Altman: RSI, AI Consciousness, OpenAI's New Hardware, Compute, and more!",
+  "source": "Forward Future Interviews",
+  "tier": 1,
+  "published": "2026-10-21",
+  "url": "https://www.buzzsprout.com/2640889",
+  "transcript_url": "https://www.buzzsprout.com/2640889/19995455/transcript.vtt",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:f2e0e7d554f1a2b3",
+  "title": "The Missing Infrastructure for AI Agents: Documents | Reducto’s Adit Abraham",
+  "source": "The a16z Show",
+  "tier": 1,
+  "published": "2026-10-21",
+  "url": "https://a16z.simplecast.com/episodes/the-missing-infrastructure-for-ai-agents-documents-reductos-adit-abraham-Tf_0B_WM",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:6be936e711130fc2",
+  "title": "James Robinson on What It Looks Like When a State is Failing",
+  "source": "Odd Lots",
+  "tier": 1,
+  "published": "2026-10-21",
+  "url": "https://omny.fm/shows/odd-lots/james-robinson-on-what-it-looks-like-when-a-state-is-failing",
+  "transcript_url": "https://api.omny.fm/orgs/e73c998e-6e60-432f-8610-ae210140c5b1/clips/fc8d0d2b-9eb1-4ed2-bdfb-b4e9015241dc/transcript?format=TextWithTimestamps&t=1792529270",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:f2c21b09e4c6f306",
+  "title": "Eric Schmidt: The Age of Agents, Superintelligence, and Why Europe Is Falling Behind",
+  "source": "In Good Company with Nicolai Tangen",
+  "tier": 1,
+  "published": "2026-10-21",
+  "url": "https://shows.acast.com/in-good-company-with-nicolai-tangen/episodes/eric-schmidt-the-age-of-agents-superintelligence-and-why-eur",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:ed2177d4820cc271",
+  "title": "The Terafab Kerfuffle: Tim's Scoop Caused a Stir, But What's Next for the Epic Fab?",
+  "source": "Supply Chained",
+  "tier": 1,
+  "published": "2026-10-20",
+  "url": "https://podcasters.spotify.com/pod/show/jon83/episodes/The-Terafab-Kerfuffle-Tims-Scoop-Caused-a-Stir--But-Whats-Next-for-the-Epic-Fab-e3qpd99",
+  "youtube_id": "B-4TpEU4b6E",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:a619b3f73b52b6bf",
+  "title": "Google CEO Sundar Pichai: AI’s Infinite Possibilities, Compute Scarcity Dilemmas, Future AI Products",
+  "source": "Big Technology Podcast",
+  "tier": 1,
+  "published": "2026-10-20",
+  "url": "https://www.bigtechnology.com/",
+  "youtube_id": "F3ItSTZNtT0",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:102e872a7dfb22e0",
+  "title": "Ep. 039 - [EMERGENCY] Our Numbers Are \"Insane.\" Here's the Proof. (Datacenters) | Jeremie Ontiveros, Reyk Knuhtsen, Jordan Nanos",
+  "source": "SemiAnalysis",
+  "tier": 1,
+  "published": "2026-10-20",
+  "url": "https://podcasters.spotify.com/pod/show/jordan-nanos/episodes/Ep--039---EMERGENCY-Our-Numbers-Are-Insane--Heres-the-Proof--Datacenters--Jeremie-Ontiveros--Reyk-Knuhtsen--Jordan-Nanos-e3qpvpg",
+  "youtube_id": "I3tNGNjYcDw",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:da7dca8e5c9567d6",
+  "title": "MicroVCSELs vs MicroLEDs, a MicroExplainer",
+  "source": "Semi Doped",
+  "tier": 1,
+  "published": "2026-10-20",
+  "url": "http://semidoped.fm",
+  "transcript_url": "https://www.buzzsprout.com/2570635/19990505/transcript.vtt",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:c39a73bfcd0063d6",
+  "title": "How Toto Wolff built the most valuable team in F1",
+  "source": "Cheeky Pint",
+  "tier": 1,
+  "published": "2026-10-20",
+  "url": "https://share.transistor.fm/s/62d31fa0",
+  "youtube_id": "mFLcqTGpVyU",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:0272b630b600f9d5",
+  "title": "Meta’s Product Director Explains How Its Ad Algorithm Works",
+  "source": "Marketing Operators",
+  "tier": 1,
+  "published": "2026-10-20",
+  "url": "https://podcasters.spotify.com/pod/show/marketing-operators/episodes/Metas-Product-Director-Explains-How-Its-Ad-Algorithm-Works-e3qofu9",
+  "youtube_id": "xjK7xzRX9m0",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:e2a7c5cc9446e4f7",
+  "title": "AI Is Smarter Than Ever. So Where’s the Revolution?",
+  "source": "Plain English with Derek Thompson",
+  "tier": 1,
+  "published": "2026-10-20",
+  "url": "https://www.theringer.com/",
+  "youtube_id": "zthE5Oa8mlM",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:6f5dd492ca03fe0b",
+  "title": "Inside the Robot Data Factory: Mecka's Josh Gao on Sensorizing Humans to Train Robots",
+  "source": "Training Data",
+  "tier": 1,
+  "published": "2026-10-20",
+  "url": "https://www.sequoiacap.com/",
+  "youtube_id": "0idrTKCDhuE",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:aaed2022fda8c519",
+  "title": "Christina Cacioppo - Building an Enduring Software Company in the Age of AI - [Invest Like the Best, EP.496]",
+  "source": "Invest Like the Best",
+  "tier": 1,
+  "published": "2026-10-20",
+  "url": "https://colossus.com/episode/becoming-a-category-winner/",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:7751d07e53cbca69",
+  "title": "Dylan Field: Is AI Replacing Designers?, Design is the New Code & Democratizing Creativity",
+  "source": "All-In Podcast",
+  "tier": 1,
+  "published": "2026-10-19",
+  "url": "https://allinchamathjason.libsyn.com/dylan-field-is-ai-replacing-designers-design-is-the-new-code-democratizing-creativity",
+  "youtube_id": "2Zj6uMv3kTA",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:757d02fc5f660083",
+  "title": "WFE to the Moon (Still), Semicon West and OCP Insights",
+  "source": "The Circuit",
+  "tier": 1,
+  "published": "2026-10-19",
+  "url": "https://share.transistor.fm/s/26584b9e",
+  "youtube_id": "THegM3_zsvY",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:008d80485c961612",
+  "title": "Seinfeld",
+  "source": "Acquired",
+  "tier": 1,
+  "published": "2026-10-18",
+  "url": "https://www.acquired.fm/episodes/seinfeld",
+  "youtube_id": "Wm53dMsn5dk",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:2366cf092de12575",
+  "title": "CoreWeave Crash, AI Trade Cracks, Anthropic IPO Red Flags, Bill Gates Doomer",
+  "source": "All-In Podcast",
+  "tier": 1,
+  "published": "2026-10-17",
+  "url": "https://allinchamathjason.libsyn.com/coreweave-crash-ai-trade-cracks-anthropic-ipo-red-flags-bill-gates-doomer",
+  "youtube_id": "_b3LfMflIGs",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:c8df302a26719e1c",
+  "title": "\"Coreweave's a Zero\" | George Noble on Why He's Short Neoclouds, Why AI is a Shale 2.0 Bubble Headed for Debt/Depreciation Brick Wall, and Why He's \"Coming For The Momentum Bros\"",
+  "source": "Monetary Matters with Jack Farley",
+  "tier": 2,
+  "published": "2026-10-23",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:7b5f88bee3a938fa",
+  "title": "11AM Hour: CrowdStrike CEO, Tech Investor Dan Niles & Moderna's Vaccine Data Leak 10/23/26",
+  "source": "CNBC Squawk on the Street",
+  "tier": 2,
+  "published": "2026-10-23",
+  "url": "https://www.cnbc.com",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:e9a66982a71bbab2",
+  "title": "10AM Hour: Apple's Foldable Future, SpaceX Shakes Up Telecom, OpenAI’s New Valuation 10/23/26",
+  "source": "CNBC Squawk on the Street",
+  "tier": 2,
+  "published": "2026-10-23",
+  "url": "https://www.cnbc.com",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:5a3393998c03f2ab",
+  "title": "9AM HOUR: Apple iPhone Duo Hits Stores, Tech Extends Sell-off, Merck CEO \"First on CNBC\"  10/23/26",
+  "source": "CNBC Squawk on the Street",
+  "tier": 2,
+  "published": "2026-10-23",
+  "url": "https://www.cnbc.com",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:fa140be27b7a4e2c",
+  "title": "The Next AI Breakthrough Isn't Chips — It's What They're Made Of (with Shalini Sharma, Ph.D.)",
+  "source": "Chip Stock Investor",
+  "tier": 2,
+  "published": "2026-10-23",
+  "url": "https://podcasters.spotify.com/pod/show/chipstockinvestor/episodes/The-Next-AI-Breakthrough-Isnt-Chips--Its-What-Theyre-Made-Of-with-Shalini-Sharma--Ph-D-e3qt527",
+  "youtube_id": "EZIHlk-EdqA",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:d075eae4037e986a",
+  "title": "How Does America’s Cheapest EV Hold Up on a Road Trip?",
+  "source": "WSJ Tech News Briefing",
+  "tier": 2,
+  "published": "2026-10-23",
+  "url": "https://www.wsj.com/podcasts/tech-news-briefing",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:a49cb69b8be1a42c",
+  "title": "ThursdAI - Oct 22 - AI finds all the vulnerabilities, Claude Duet, DeepSeek drops Infer & more AI news",
+  "source": "ThursdAI",
+  "tier": 2,
+  "published": "2026-10-23",
+  "url": "https://sub.thursdai.news/p/thursdai-oct-22-ai-finds-all-the",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:e89d09dc889f8329",
+  "title": "Tech Earnings Reaction, Q3 All-America Survey, Hormuz Chokepoint Check 10/22/26",
+  "source": "CNBC Power Lunch",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://www.cnbc.com",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:89e318a87689c8b2",
+  "title": "How to Value Unprofitable Businesses: Ouster (OUST Stock) Example -- Normalized Profit Calculator",
+  "source": "Chip Stock Investor",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasters.spotify.com/pod/show/chipstockinvestor/episodes/How-to-Value-Unprofitable-Businesses-Ouster-OUST-Stock-Example----Normalized-Profit-Calculator-e3qt3kd",
+  "youtube_id": "Og8ePuHUF1A",
+  "has_transcript": true,
+  "transcript_source": "youtube-captions (mirror)"
+ },
+ {
+  "episode_id": "rss:22c11e502cceb7ee",
+  "title": "Reid Hoffman and OpenAI CFO Sarah Friar on where AI goes from here",
+  "source": "Pioneers of AI",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://art19.com/shows/pioneers-of-ai",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:638670a60eae5bed",
+  "title": "20VC: Trillion or Bust: The New VC Game | Coreweave Sell-Off Creates Panic | Town at $1B, Anduril at $90B: Revenue Multiples Out of Control | General Atlantic Eyes IPO & Modal Raises $750M at $15.75B",
+  "source": "The Twenty Minute VC",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://thetwentyminutevc.libsyn.com/20vc-trillion-or-bust-the-new-vc-game-coreweave-sell-off-creates-panic-town-at-1b-anduril-at-90b-revenue-multiples-out-of-control-general-atlantic-eyes-ipo-modal-raises-750m-at-1575b",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:73ec30ac9199e077",
+  "title": "Driverless Trucks Are Coming. Good Luck Getting Them to Honk.",
+  "source": "WSJ Tech News Briefing",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://www.wsj.com/podcasts/tech-news-briefing",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:4552fc3f8a91f9f7",
+  "title": "Tech Earnings Season, SpaceX Targeting Telecoms, CME Group CEO Interview 10/21/26",
+  "source": "CNBC Power Lunch",
+  "tier": 2,
+  "published": "2026-10-21",
+  "url": "https://www.cnbc.com",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:a47c8344fb9cb923",
+  "title": "Anthropic’s Draft IPO Filing Shows Red-Hot Growth and Big Risks",
+  "source": "WSJ Tech News Briefing",
+  "tier": 2,
+  "published": "2026-10-21",
+  "url": "https://www.wsj.com/podcasts/tech-news-briefing",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:d438e8704b892ef6",
+  "title": "Meta Platforms Inc ($META) Q3 2026 Earnings Call",
+  "source": "Meta earnings call",
+  "tier": 2,
+  "published": "2026-10-21",
+  "url": "https://casti.fyi/rss/3437762148822bf05ced474b.xml",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:e6d728e08fb4574a",
+  "title": "Tesla Inc ($TSLA) Q3 2026 Earnings Call",
+  "source": "Tesla earnings call",
+  "tier": 2,
+  "published": "2026-10-21",
+  "url": "https://casti.fyi/rss/fc22d490dcd03d58e07f2450.xml",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:ec813aa4e4e6db12",
+  "title": "Is The AI Trade Over? | Jack & Max on Panic in AI Credit, SpaceX Earnings, and Semis",
+  "source": "Monetary Matters with Jack Farley",
+  "tier": 2,
+  "published": "2026-10-20",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:e01b71ebeb831163",
+  "title": "Cracks in the AI Trade, Tech Earnings Preview, Surging Airfares 10/20/26",
+  "source": "CNBC Power Lunch",
+  "tier": 2,
+  "published": "2026-10-20",
+  "url": "https://www.cnbc.com",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:54a43f14676f584b",
+  "title": "CoreWeave Bond Crash: Why CRWV & Neocloud Stocks Are Tumbling",
+  "source": "Chip Stock Investor",
+  "tier": 2,
+  "published": "2026-10-20",
+  "url": "https://podcasters.spotify.com/pod/show/chipstockinvestor/episodes/CoreWeave-Bond-Crash-Why-CRWV--Neocloud-Stocks-Are-Tumbling-e3qpvd5",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:5b30a014a9aea6c5",
+  "title": "Apollo’s Yahoo Playbook, 5 Years After the $5B Deal",
+  "source": "Sourcery",
+  "tier": 2,
+  "published": "2026-10-19",
+  "url": "https://podcasters.spotify.com/pod/show/sourcery/episodes/Apollos-Yahoo-Playbook--5-Years-After-the-5B-Deal-e3qnols",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:88e42015f775d236",
+  "title": "20VC: You Need $1BN To Do Seed Today: The Untold Truths of Venture | Who Wins and Who Loses in the Next Decade of VC | Why Margin and Price Matter Less in a World of AI with Sameer Dholakia, Bessemer",
+  "source": "The Twenty Minute VC",
+  "tier": 2,
+  "published": "2026-10-19",
+  "url": "https://thetwentyminutevc.libsyn.com/20vc-you-need-1bn-to-do-seed-today-the-untold-truths-of-venture-who-wins-and-who-loses-in-the-next-decade-of-vc-why-margin-and-price-matter-less-in-a-world-of-ai-with-sameer-dholakia-bessemer",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:ba17b936f04e1a8c",
+  "title": "Kalshi Co-founder and COO Luana Lopes Lara on the Long Fight for Regulated Prediction Markets",
+  "source": "Confession with Ali Partovi",
+  "tier": 2,
+  "published": "2026-10-19",
+  "url": "https://neo.com/",
+  "transcript_url": "https://rss.flightcast.com/transcripts/01M52A7TJAR7WPJ3VV8XXCPN4Z.vtt",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:5749fcb2e8a83fba",
+  "title": "20VC: Horizontal vs Vertical Agents: Who Wins | Model Routing: Commodity or Increasing in Value | The Future of the Inference Market | Why Founders Should Take Discounts for Tier 1 Firms with Harrison Chase, LangChain",
+  "source": "The Twenty Minute VC",
+  "tier": 2,
+  "published": "2026-10-18",
+  "url": "https://thetwentyminutevc.libsyn.com/20vc-horizontal-vs-vertical-agents-who-wins-model-routing-commodity-or-increasing-in-value-the-future-of-the-inference-market-why-founders-should-take-discounts-for-tier-1-firms-with-harrison-chase-langchain",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:ea8d970ad8db4df6",
+  "title": "6 timeless attributes for succeeding in the AI era",
+  "source": "The Deep View: Conversations",
+  "tier": 2,
+  "published": "2026-10-18",
+  "url": "https://share.transistor.fm/s/4058a46f",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:3e3fd7b663f376f8",
+  "title": "Inside the black box of AI: How AI models actually think | Emmanuel Ameisen (Anthropic)",
+  "source": "Lenny's Podcast",
+  "tier": 2,
+  "published": "2026-10-18",
+  "url": "https://www.lennysnewsletter.com/p/a-mind-expanding-conversation-on",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:6021fc1028d28cc2",
+  "title": "Jim Bianco: Why I’m Finally Buying Bonds After Six Years",
+  "source": "Monetary Matters with Jack Farley",
+  "tier": 2,
+  "published": "2026-10-18",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:5aa0f5c0afef8076",
+  "title": "Managing $525 Billion by Rethinking Wealth Management | Kurt MacAlpine, Corient",
+  "source": "David Senra",
+  "tier": 2,
+  "published": "2026-10-18",
+  "url": "https://www.davidsenra.com/episode/kurt-macalpine",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:2201ca715e09ca60",
+  "title": "Meta shakes up the frontiers, open and closed",
+  "source": "Interconnects",
+  "tier": 2,
+  "published": "2026-10-17",
+  "url": "https://www.interconnects.ai/p/meta-shakes-up-the-frontiers-open",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:1e141b9ac695163c",
+  "title": "692. What Will A.I. Do to (and for) Human Creativity?",
+  "source": "Freakonomics Radio",
+  "tier": 2,
+  "published": "2026-10-23",
+  "url": "https://podcasts.apple.com/us/podcast/692-what-will-a-i-do-to-and-for-human-creativity/id354668519?i=1000797760263&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:7414f975dcf23d18",
+  "title": "Everything You Need To Know About What's REALLY Happening at Russell Brand's UK Trial, with Mark Eiglarsh, Matt Murphy, and Viva Frei  |  Ep. 1425",
+  "source": "The Megyn Kelly Show",
+  "tier": 2,
+  "published": "2026-10-23",
+  "url": "https://podcasts.apple.com/us/podcast/everything-you-need-to-know-about-whats-really-happening/id1532976305?i=1000797703305&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:32416f3a93725261",
+  "title": "Jensen Huang Thinks A.I. Alarmism Has Gone Too Far",
+  "source": "The Ezra Klein Show",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/jensen-huang-thinks-a-i-alarmism-has-gone-too-far/id6818270849?i=1000797670744&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:e99341085939be73",
+  "title": "Meta Doubles Down on AI Spending, Plans New Class C Shares",
+  "source": "Bloomberg Tech",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/meta-doubles-down-on-ai-spending-plans-new-class-c-shares/id1611767434?i=1000797664748&uo=4",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:99540fa684214139",
+  "title": "No One Likes Any of Sam Altman’s 3 AI Endgames | TWiAI E36",
+  "source": "This Week in AI",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/no-one-likes-any-of-sam-altmans-3-ai-endgames-twiai-e36/id1874648722?i=1000797660038&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:3a46ecbaad4d856c",
+  "title": "#343 Tiffany Lin – She Psychically Read Sam Altman & Elon Musk. Here's What She Saw",
+  "source": "Just Tap In with Emilio Ortiz",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/343-tiffany-lin-she-psychically-read-sam-altman-elon/id1611118279?i=1000797657729&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:bda918d819f81297",
+  "title": "Stan Druckenmiller: Macro, QE, Inflation, The Fed, Investing",
+  "source": "Investing Legends",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/stan-druckenmiller-macro-qe-inflation-the-fed-investing/id1870072388?i=1000797648053&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:0be6c272e1a048d9",
+  "title": "Guillermo Rauch: One Stroke Dragon",
+  "source": "First of Kind",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/guillermo-rauch-one-stroke-dragon/id1818890725?i=1000797633930&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:ef2de24b2e9b419f",
+  "title": "9AM HOUR: AI Trade Pain, Meta and Tesla Slide, Jensen Huang Interview 10/22/26",
+  "source": "Squawk on the Street",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/9am-hour-ai-trade-pain-meta-and-tesla-slide-jensen/id1475116211?i=1000797630328&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:f893cbec10de3cd8",
+  "title": "The Builders: Peter Thiel",
+  "source": "TechStuff",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/the-builders-peter-thiel/id282795787?i=1000797595538&uo=4",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:46dd195ffb56cf2f",
+  "title": "AGI Is Already Here. It Just Can't Plug In | Chamath Palihapitiya x Alex Wissner-Gross",
+  "source": "ASI pill",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/agi-is-already-here-it-just-cant-plug-in-chamath-palihapitiya/id1754827681?i=1000797585927&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:ebf2ded56d6180c3",
+  "title": "Can We Coexist With AI? — with Ethan Mollick",
+  "source": "The Prof G Pod with Scott Galloway",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/can-we-coexist-with-ai-with-ethan-mollick/id1498802610?i=1000797583191&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:0533ee969eac21d0",
+  "title": "Tesla Freezes AI Spending Before SpaceX Merger",
+  "source": "Elon Musk Podcast",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/tesla-freezes-ai-spending-before-spacex-merger/id1480583664?i=1000797578454&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:f4664b7849f5f656",
+  "title": "Peter Thiel: “We Need to Hit the Accelerator as Hard as Possible” on AI",
+  "source": "The Builders",
+  "tier": 2,
+  "published": "2026-10-22",
+  "url": "https://podcasts.apple.com/us/podcast/peter-thiel-we-need-to-hit-the-accelerator-as-hard-as/id6820674378?i=1000797575483&uo=4",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:6e5bf3a76304299d",
+  "title": "Chamath: AGI Is Here, Anthropic’s $100B Giveaway, Elon’s SpaceX Shares for 72M Kids | EP #304",
+  "source": "Moonshots with Peter Diamandis",
+  "tier": 2,
+  "published": "2026-10-21",
+  "url": "https://podcasts.apple.com/us/podcast/chamath-agi-is-here-anthropics-%24100b-giveaway-elons/id1648228034?i=1000797496864&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:47f528fdf559c1fc",
+  "title": "Ben Graham: Learning From The Dean of Wall Street (Warren Buffett's Mentor)",
+  "source": "Chit Chat Stocks",
+  "tier": 2,
+  "published": "2026-10-21",
+  "url": "https://podcasts.apple.com/us/podcast/ben-graham-learning-from-the-dean-of-wall-street/id1437766060?i=1000797404309&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:7b0171c6a7a61d57",
+  "title": "Karpathy’s AI gap, free Adobe clones, and AI’s effect on persistence",
+  "source": "Possible with Reid Hoffman",
+  "tier": 2,
+  "published": "2026-10-21",
+  "url": "https://podcasts.apple.com/us/podcast/karpathys-ai-gap-free-adobe-clones-and-ais-effect-on/id1677184070?i=1000797399336&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:b234d48869240dc9",
+  "title": "The Mind of Larry Ellison w/ Tom Dotan",
+  "source": "Better Offline",
+  "tier": 2,
+  "published": "2026-10-21",
+  "url": "https://podcasts.apple.com/us/podcast/the-mind-of-larry-ellison-w-tom-dotan/id1730587238?i=1000797373127&uo=4",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:e4d546363f9d8a63",
+  "title": "Eric Schmidt's $80 Billion Anthropic Bet",
+  "source": "Tech Brew Ride Home",
+  "tier": 2,
+  "published": "2026-10-20",
+  "url": "https://podcasts.apple.com/us/podcast/eric-schmidts-%2480-billion-anthropic-bet/id1355212895?i=1000797307444&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:abfb5e68c88bdf63",
+  "title": "Elon Musk: \"Humans Won't Be in Control\" When AI Becomes Smarter Than Us",
+  "source": "The Builders",
+  "tier": 2,
+  "published": "2026-10-20",
+  "url": "https://podcasts.apple.com/us/podcast/elon-musk-humans-wont-be-in-control-when-ai-becomes/id6820674378?i=1000797217781&uo=4",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:50dc5407d941a77e",
+  "title": "How Cathie Wood Became the Queen of Retail Investors | FINAiUS",
+  "source": "FINAiUS",
+  "tier": 2,
+  "published": "2026-10-20",
+  "url": "https://podcasts.apple.com/us/podcast/how-cathie-wood-became-the-queen-of-retail/id1812201976?i=1000710163528&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:678fa7ecd72968e9",
+  "title": "SpaceX, Tesla, Meta Headline Week's Big Tech Earnings",
+  "source": "Bloomberg Businessweek",
+  "tier": 2,
+  "published": "2026-10-19",
+  "url": "https://podcasts.apple.com/us/podcast/spacex-tesla-meta-headline-weeks-big-tech-earnings/id393107187?i=1000797157595&uo=4",
+  "has_transcript": true,
+  "transcript_source": "podcast:transcript"
+ },
+ {
+  "episode_id": "rss:fd8b8c21ccb76ca9",
+  "title": "Building a Berkshire for the Middle Market – Tracy Britt Cool",
+  "source": "Capital Allocators – Inside the Institutional Investment Industry",
+  "tier": 2,
+  "published": "2026-10-19",
+  "url": "https://podcasts.apple.com/us/podcast/building-a-berkshire-for-the-middle-market-tracy-britt-cool/id1223764016?i=1000797038997&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:69f931fe6b30b0c6",
+  "title": "Kristi Noem Got A New Dog| Instagram Sabotages No Kings While Silencing Brazil's President Lula #1711",
+  "source": "David Feldman Show",
+  "tier": 2,
+  "published": "2026-10-19",
+  "url": "https://podcasts.apple.com/us/podcast/kristi-noem-got-a-new-dog-instagram-sabotages-no/id321997239?i=1000797028466&uo=4",
+  "has_transcript": false
+ },
+ {
+  "episode_id": "rss:0a6709259a465f66",
+  "title": "How AMD's Lisa Su Views the Future of AI",
+  "source": "Harvard Business Review",
+  "tier": 2,
+  "published": "2026-10-17",
+  "url": "https://podcasts.apple.com/us/podcast/how-amds-lisa-su-views-the-future-of-ai/id1886705492?i=1000756327576&uo=4",
+  "has_transcript": false
+ }
+]
