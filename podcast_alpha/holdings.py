@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 """Holdings are held in memory for the run only. They are never logged, printed or written to disk."""
+import os
+
 import requests
 
-FOLIO_URL = "https://alpha.mingdom.co/folio?scope=all&format=json"
+ENV_VAR = "PA_FOLIO_URL"  # private endpoint; deliberately not in the repo and not logged
 
 
 def _weights(data) -> dict[str, float]:
@@ -19,7 +21,11 @@ def _weights(data) -> dict[str, float]:
     return out
 
 
-def fetch_weights(url: str = FOLIO_URL) -> dict[str, float]:
+def fetch_weights(url: str | None = None) -> dict[str, float]:
+    url = url or os.environ.get(ENV_VAR)
+    if not url:
+        print(f"[holdings] {ENV_VAR} not set; continuing without weighting")
+        return {}
     try:
         r = requests.get(url, timeout=30)
         r.raise_for_status()

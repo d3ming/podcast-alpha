@@ -91,3 +91,24 @@ def test_feed_transcripts_matches_guid():
     other = ep(id="rss:none", feed_url="https://feed")
     assert feed_transcripts([e, other], parse=lambda url: SimpleNamespace(entries=[entry])) == 1
     assert e.transcript_urls[0]["url"] == "https://x/t.vtt" and other.transcript_urls is None
+
+
+def test_page_url_falls_back_to_guid_then_links_then_feed():
+    audio = "https://traffic.megaphone.fm/PDP1.mp3"
+    show = "https://show.example"
+    # item has no link: an http(s) guid that is a page wins over the show page
+    assert ingest.page_url({"id": "https://show.example/ep1"}, audio, show) == "https://show.example/ep1"
+    assert ingest.page_url({"guid": "https://show.example/ep2"}, audio, show) == "https://show.example/ep2"
+    # non-URL guid, audio guid, or tracking guid is skipped
+    assert ingest.page_url({"id": "a1b2c3d4-0000"}, audio, show) == show
+    assert ingest.page_url({"id": audio}, audio, show) == show
+    assert ingest.page_url({"id": "https://dts.podtrac.com/redirect.mp3/x"}, None, show) == show
+    # real item link still beats the guid
+    assert ingest.page_url({"link": "https://show.example/real", "id": "https://show.example/guid"}, audio, show) == "https://show.example/real"
+    # guid before other links; then links (skipping audio) before feed link
+    entry = {"id": "not a url", "links": [{"rel": "enclosure", "href": audio, "type": "audio/mpeg"},
+                                          {"rel": "alternate", "href": "https://show.example/alt"}]}
+    assert ingest.page_url(entry, audio, show) == "https://show.example/alt"
+    assert ingest.page_url({**entry, "id": "https://show.example/g"}, audio, show) == "https://show.example/g"
+    # nothing usable and no feed link: empty, never invented
+    assert ingest.page_url({"id": "urn:uuid:1"}, audio, None) == ""

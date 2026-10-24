@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -134,6 +135,18 @@ def merge(args) -> Path:
     return run_dir
 
 
+FAILED = "lookup-failed"
+
+
+def safe_transcript(ep, budget):
+    """One episode's lookup must never abort the whole fetch (timeouts, yt-dlp missing, blocked IP): record none and go on."""
+    try:
+        return get_transcript(ep, budget)
+    except Exception as exc:
+        print(f"[transcript] {ep.id}: {type(exc).__name__}: {str(exc)[:80]}")
+        return None, FAILED
+
+
 def fetch(args) -> Path:
     now = datetime.now(timezone.utc)
     if args.youtube_only:
@@ -183,22 +196,33 @@ def fetch(args) -> Path:
     budget = Budget(args.whisper_minutes or 0, args.whisper_per_episode)
     news_ids = {s.id for s in sources if s.news}
     eps.sort(key=lambda e: (e.source_id.startswith("person:") != people_first, e.tier, -e.published_at.timestamp()))
+    todo, queued = [], set()
     for ep in eps:
         if ep.id in have:
             continue
         if getattr(args, "youtube_mirror", False) and "youtube_mirror" not in (ep.methods or []):
             ep.methods = [m for m in (ep.methods or ["podcast_transcript", "whisper"]) if m != "whisper"] + \
                 ["youtube_mirror", "whisper"]
-        dup = not args.refetch and (store.seen(ep.id) or any(k.id != ep.id and title_match(k.title, ep.title) >= 0.8 for k in known))
+        dup = not args.refetch and (ep.id in queued or store.seen(ep.id)
+                                    or any(k.id != ep.id and title_match(k.title, ep.title) >= 0.8 for k in known))
         if dup:
             manifest["skipped_seen"].append(ep.id)
             print(f"[dedupe] skip {ep.id}")
             continue
-        segs, tsrc = get_transcript(ep, budget)
-        row = write_episode(run_dir, ep, segs, tsrc, getattr(args, "min_transcript_chars", MIN_TRANSCRIPT_CHARS))
+        queued.add(ep.id)
+        todo.append(ep)
+    # Transcript lookups are network-bound and independent, so run them side by side. Whisper is CPU-bound and shares the
+    # budget, so a run that may whisper stays sequential.
+    workers = 1 if args.whisper_minutes else min(4, max(1, len(todo)))
+    with ThreadPoolExecutor(workers) as pool:
+        results = list(pool.map(lambda ep: safe_transcript(ep, budget), todo))
+    for ep, (segs, tsrc) in zip(todo, results):
+        failed = tsrc == FAILED  # keep the row (it can still be whispered) but leave the dedupe DB alone so a later run retries
+        row = write_episode(run_dir, ep, segs, None if failed else tsrc, getattr(args, "min_transcript_chars", MIN_TRANSCRIPT_CHARS))
         row["news"] = ep.source_id in news_ids
         manifest["episodes"].append(row)
-        store.add_episode(ep, tsrc)
+        if not failed:
+            store.add_episode(ep, tsrc)
     manifest["whisper_minutes"] = round(budget.used / 60, 1)
     timing_apply(manifest, "fetch", "end")
     new = manifest

@@ -9,7 +9,15 @@ KEYWORDS = re.compile(r"\b(ceo|cfo|coo|cto|founder|co-founder|chairman|president
                       r"asml|tsmc|nvidia|intel|amd|broadcom|cloudflare|hybrid bonding|euv|macro|fed|inflation)\b", re.I)
 
 
-GUEST = re.compile(r"\b[A-Z][a-z]+(?:\s[A-Z]\.)?\s[A-Z][a-z]{2,}\b(?:\s*(?:&|and|,)\s*[A-Z][a-z]+\s[A-Z][a-z]+|:|\s+on\s)")
+NAME = r"[A-Z][a-z]+(?:\s[A-Z]\.)?\s[A-Z][a-z]{2,}"
+GUEST = re.compile(rf"\b({NAME})\b(?:\s*(?:&|and|,)\s*[A-Z][a-z]+\s[A-Z][a-z]+|:|\s+on\s)")
+PAIR = re.compile(rf"^\s*({NAME})\s*(?:&|and)\s*({NAME})\s*[:|\u2013\u2014-]")  # "First Last & First Last: topic"
+ROLE_NAME = re.compile(rf"\b(?:CEO|CTO|CFO|COO|CIO|Founder|Co-?[Ff]ounder|Chairman|President)\s+({NAME})\b"
+                       rf"|\b({NAME}),\s+(?:the\s+)?(?:CEO|CTO|CFO|COO|CIO|Founder|Chairman|President)\b|\|\s*({NAME})\s*$")
+NOT_NAME = set("the weekly daily monthly market markets morning evening week show episode special live bonus part breaking "
+               "mode says said tech news stock stocks world wall street big how why what new top best state inside "
+               "behind open frontier part bitcoin data centers miners stanley sachs capital partners ventures labs bank group corp inc "
+               "holdings motors airlines markets lots planet money".split())
 
 
 EXEC = re.compile(r"\b(ceo|cfo|cto|coo|cio|cso|chief [a-z]+ officer|co-?founder|founder|president|chair(man|woman|person)?|"
@@ -33,6 +41,18 @@ def exec_guest(e: dict) -> str | None:
     t = text_of(e)
     m = EXEC.search(t) or INVESTORS.search(t)
     return m.group(0) if m else None
+
+
+def named_guests(title: str, show: str = "") -> list[str]:
+    """Headline guest names in a title: a leading pair, "First Last:"/"on", "CEO First Last", "First Last, CEO", "| First Last"."""
+    m = PAIR.search(title)
+    found = list(m.groups()) if m else [g for g in [(GUEST.search(title) or [None, None])[1]] if g]
+    if not found:
+        m = ROLE_NAME.search(title)
+        found = [next(g for g in m.groups() if g)] if m else []
+    if show:  # a trailing "| Odd Lots" is the show's own name, not a guest
+        found = [n for n in found if n.lower() not in show.lower()]
+    return found if found and not any(w.lower() in NOT_NAME for n in found for w in n.split()) else []
 
 
 def duration(e: dict) -> int | None:
@@ -110,9 +130,10 @@ def score(e: dict, people_idx: list[tuple[str, str]], now: datetime, is_news) ->
     if OFF_DOMAIN.search(text_of(e)):
         s -= 150
         why.append("off-domain (" + OFF_DOMAIN.search(text_of(e)).group(0).lower() + ")")
-    if GUEST.search(e.get("title", "")):
-        s += 20
-        why.append("named guest")
+    guests_named = named_guests(e.get("title", ""), e.get("source") or "")
+    if guests_named:
+        s += 45 if len(guests_named) > 1 else 20
+        why.append(("two named guests (" + ", ".join(guests_named) + ")") if len(guests_named) > 1 else "named guest")
     kw = sorted({m.group(0).lower() for m in KEYWORDS.finditer(e.get("title", ""))})
     if kw:
         s += min(30, 10 * len(kw))

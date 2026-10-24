@@ -77,7 +77,7 @@ def check(args) -> None:
             warnings += report.caption_warn(data, run_dir)
         else:
             warnings.append("--captions only applies to report.json; ignored")
-    for w in warnings:
+    for w in report.dedupe_warnings(warnings):
         print(f"[check] warning: {w}")
     if errors := report.verify(kind, data, Path(args.file).resolve().parent):
         sys.exit("\n".join(f"[check] invalid: {e}" for e in errors))
@@ -120,6 +120,32 @@ def transcript_links_cmd(args) -> None:
 
     r = backfill_transcript_urls(Path(args.run), Path(args.sources))
     print(f"[transcript-links] {r['found']} of {r['missing']} publisher transcripts linked in {args.run}")
+
+
+def rank_prep(args) -> None:
+    from .rank import prep
+
+    r = prep(Path(args.run), args.batches)
+    print(f"[rank-prep] {r['transcribed']} transcribed episodes in {r['batches']} batches under {args.run}/rank "
+          f"({r['without_transcript']} without a transcript are not ranked). Give each batch-N-in.json to a reader "
+          f"(prompts/rank.md); save its output as rank/batch-N-out.json, then run rank-merge.")
+
+
+def rank_merge(args) -> None:
+    from . import ranked
+    from .rank import merge
+
+    run = Path(args.run)
+    try:
+        data = merge(run, args.ranked_by, args.week_of)
+        warnings = ranked.validate(data)
+    except (ValueError, ranked.RankedError, FileNotFoundError) as exc:
+        sys.exit(f"[rank-merge] {exc}")
+    for w in warnings:
+        print(f"[rank-merge] warning: {w}")
+    out = run / "ranked.json"
+    out.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
+    print(f"[rank-merge] {out} ({len(data['episodes'])} episodes). Next: podcast-alpha publish {out} --top 15")
 
 
 def show_links(args) -> None:
@@ -254,6 +280,13 @@ def main(argv=None):
     tl = sub.add_parser("transcript-links", help="record the hosted transcript URL for older manifests (re-reads the feeds)")
     tl.add_argument("run")
     tl.add_argument("--sources", default=str(ROOT / "sources.yaml"))
+    rp = sub.add_parser("rank-prep", help="weekly: condense transcripts and split them into reader batches under <run>/rank")
+    rp.add_argument("run")
+    rp.add_argument("--batches", type=int, default=4)
+    rm = sub.add_parser("rank-merge", help="weekly: merge reader outputs (rank/batch-*-out.json) into <run>/ranked.json")
+    rm.add_argument("run")
+    rm.add_argument("--ranked-by", default="Claude")
+    rm.add_argument("--week-of", help="YYYY-MM-DD (default: earliest published date in the run)")
     sl = sub.add_parser("show-links", help="fill blank per-podcast links (site, YouTube, Apple, Spotify) in show_links.yaml")
     sl.add_argument("--sources", default=str(ROOT / "sources.yaml"))
     sl.add_argument("--file", default=str(ROOT / "show_links.yaml"))
@@ -273,7 +306,7 @@ def main(argv=None):
     p.add_argument("--notion-parent", help="Notion parent page id (API publish needs NOTION_TOKEN)")
     args = ap.parse_args(argv)
     {"fetch": fetch, "daily": daily, "merge": merge, "transcribe": transcribe_run, "publish": publish, "check": check,
-     "report": render_report, "tmtb-import": tmtb_import, "links": links, "show-links": show_links, "transcript-links": transcript_links_cmd, "mark": mark, "stats": stats}[args.cmd](args)
+     "report": render_report, "tmtb-import": tmtb_import, "links": links, "show-links": show_links, "rank-prep": rank_prep, "rank-merge": rank_merge, "transcript-links": transcript_links_cmd, "mark": mark, "stats": stats}[args.cmd](args)
 
 
 if __name__ == "__main__":

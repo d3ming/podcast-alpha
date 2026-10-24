@@ -82,3 +82,34 @@ def test_tmtb_writes_recall(tmp_path):
     rec = json.loads((run / "manifest.json").read_text())["recall"]
     assert rec["tmtb"] == 3 and rec["hits"] == 1 and rec["recall"] == 0.333 and rec["picks"] == 2
     assert len(rec["missed"]) == 2 and rec["found_in_run"] == 1
+
+
+def test_triage_scores_headline_guest_titles():
+    titles = {"pair": "Arvind Krishna & Nikesh Arora: Quantum Threat, Open vs Frontier AI, AI Cyber Warfare & SaaS Collapse",
+              "ceo": "Amazon CEO Andy Jassy on the $220 Billion AI Buildout",
+              "on": "Sundar Pichai on Gemini 4 and the AI compute crunch",
+              "role": "Intel CTO Sachin Katti Talks Foundry", "comma": "Jane Smith, CEO of AMD",
+              "trail": "Datacenters | Jensen Huang",
+              "none": "Weekly Market Recap", "ep": "Ep. 039 - Datacenters", "trade": "The AI Trade Cracks",
+              "colon": "Weekly Market: Stocks Fall", "mode": "Founder Mode Explained"}
+    m = {"episodes": [row(k, t, tier=1) for k, t in titles.items()]}
+    triage(m, [], top=3, now=NOW)
+    e = {x["episode_id"]: x["triage"] for x in m["episodes"]}
+    assert any(r.startswith("two named guests (Arvind Krishna, Nikesh Arora)") for r in e["pair"]["reasons"])
+    assert e["pair"]["score"] > e["none"]["score"] + 40
+    for k in ("ceo", "on", "role", "comma", "trail"):
+        assert "named guest" in e[k]["reasons"], k
+    for k in ("none", "ep", "trade", "colon", "mode"):
+        assert not any("named guest" in r for r in e[k]["reasons"]), k
+    assert e["pair"]["score"] > e["on"]["score"] > e["none"]["score"]  # pair > single guest > no guest
+
+
+def test_named_guests_ignores_show_names_and_company_pairs():
+    from podcast_alpha.triage import named_guests
+
+    assert named_guests("Why Rates Fell | Odd Lots") == [] and named_guests("Why Rates Fell | Planet Money") == []
+    assert named_guests("Why Rates Fell | Ada Quill") == ["Ada Quill"]  # a real trailing guest still counts...
+    assert named_guests("Why Rates Fell | Ada Quill", "Ada Quill Radio") == []  # ...unless it is the show's own name
+    assert named_guests("Morgan Stanley & Goldman Sachs: Who Wins the IPO Season") == []
+    assert named_guests("Bitcoin Miners and Data Centers: A Merger Wave") == []
+    assert named_guests("Arvind Krishna & Nikesh Arora: Quantum Threat") == ["Arvind Krishna", "Nikesh Arora"]

@@ -255,7 +255,15 @@ def _number_index(run_dir: Path, row: dict) -> list[tuple[float, str]]:
     return spoken_numbers(_stream(segments_from_md(md.read_text()) if md and md.exists() else []))
 
 
+def _short(headline: str | None, n: int = 40) -> str:
+    h = " ".join((headline or "").replace('"', "'").split())
+    return f' "{h[:n].rstrip()}{"..." if len(h) > n else ""}"' if h else ""
+
+
 def _number_warnings(ep: dict, index: list[tuple[float, str]], source: str = "transcript") -> list[str]:
+    """One line per cite number not spoken near its timestamp. `source` is the label shown in [..]: transcript|captions.
+    Shape (parsed by dedupe_warnings): "report: <eid> "<headline>" <cite position>: number N not spoken within Ws of
+    H:MM:SS (ts Ns) [source]; <nearest mention and what to do>"."""
     out = []
     for where, c in _cites(ep):
         ts = c["timestamp"]
@@ -265,11 +273,40 @@ def _number_warnings(ep: dict, index: list[tuple[float, str]], source: str = "tr
         for num in cite_numbers(c["text"]):
             if num in near:
                 continue
-            elsewhere = sorted({int(t) for t, k in index if k == num})
-            found = (f"; spoken at {', '.join(_clock(t) for t in elsewhere[:6])}" + (" ..." if len(elsewhere) > 6 else "")
-                     if elsewhere else f"; not found anywhere in the {source}")
-            out.append(f"report: {ep['episode_id']} {where}: number {num} not spoken within {NUM_WINDOW}s of "
-                       f"timestamp {ts} ({_clock(ts)}) in the {source}{found}")
+            spoken = [t for t, k in index if k == num]
+            if spoken:
+                t = min(spoken, key=lambda x: abs(x - ts))
+                tail = (f"nearest mention {_clock(t)} ({int(abs(t - ts))}s {'later' if t > ts else 'earlier'}); "
+                        f"move the timestamp there or fix the number")
+            else:
+                tail = f"not spoken anywhere in the {source}; fix or drop the number"
+            out.append(f"report: {ep['episode_id']}{_short(ep.get('headline'))} {where}: number {num} not spoken within "
+                       f"{NUM_WINDOW}s of {_clock(ts)} (ts {int(ts)}s) [{source}]; {tail}")
+    return out
+
+
+_NUM_WARN = re.compile(r'^(?P<pre>(?:report|ranked): \S+(?: "[^"]*")? \S+: number \S+ not spoken within \d+s of \S+ \(ts \d+s\)) '
+                       r'\[(?P<src>[^\]]+)\]; (?P<tail>.*)$')
+
+
+def dedupe_warnings(warnings: list[str]) -> list[str]:
+    """Collapse repeats, keeping first-seen order. Number warnings (same episode, cite position, number and timestamp)
+    from different checks merge into one line that names every source, e.g. "[transcript, captions]" with each
+    source's nearest mention. Any other line is only de-duplicated when identical."""
+    merged: dict[str, dict] = {}
+    for w in warnings:
+        m = _NUM_WARN.match(w)
+        key = m.group("pre") if m else w
+        slot = merged.setdefault(key, {"line": w, "tails": {}} if m else {"line": w})
+        if m:
+            slot["tails"].setdefault(m.group("src"), m.group("tail"))
+    out = []
+    for key, slot in merged.items():
+        tails = slot.get("tails")
+        if not tails or len(tails) == 1:
+            out.append(slot["line"])
+        else:
+            out.append(f"{key} [{', '.join(tails)}]; " + "; ".join(f"{src}: {t}" for src, t in tails.items()))
     return out
 
 
@@ -285,24 +322,33 @@ def warn(kind: str, data: dict, run_dir: Path) -> list[str]:
     for ep in data["episodes"]:
         row = by_id.get(ep["episode_id"])
         if row is not None and row.get("has_transcript"):
+            if _load_transcript(run_dir, row)[0] is None:
+                out.append(f"report: {ep['episode_id']}{_short(ep.get('headline'))}: transcript {row.get('file')} is "
+                           f"missing or has no [h:mm:ss] lines; number check skipped")
+                continue
             out += _number_warnings(ep, _number_index(run_dir, row))
-    return out
+    return dedupe_warnings(out)
 
 
 def _ranked_cites(e: dict) -> dict:
-    return {"episode_id": e["episode_id"], "sections": [],
+    return {"episode_id": e["episode_id"], "headline": e.get("title"), "sections": [],
             "signal": [{"text": c["claim"], "timestamp": c["timestamp"]} for c in e["claims"]]}
 
 
 def ranked_verify(data: dict, run_dir: Path) -> tuple[list[str], list[str]]:
-    """(errors, warnings) for a weekly ranked.json against its run folder; ([], []) when run_dir has no manifest.
+    """(errors, warnings) for a weekly ranked.json against its run folder.
+    No manifest.json (or an unreadable one): ([], [one warning]) and no grounding. A manifest episode whose transcript
+    file is missing or empty gets one warning and is skipped.
     Errors: id not in the manifest, claims on an episode without a real transcript, timestamp past the transcript end,
     a 12-word verbatim run. Warnings: numbers in a claim not spoken within NUM_WINDOW seconds of its timestamp."""
-    man_p = Path(run_dir) / "manifest.json"
-    if not man_p.exists():
-        return [], []
     run_dir = Path(run_dir)
-    by_id = {e["episode_id"]: e for e in json.loads(man_p.read_text()).get("episodes", [])}
+    man_p = run_dir / "manifest.json"
+    if not man_p.exists():
+        return [], [f"ranked: no manifest.json in {run_dir}; claims not grounded (ids, timestamps, numbers unchecked)"]
+    try:
+        by_id = {e["episode_id"]: e for e in json.loads(man_p.read_text()).get("episodes", [])}
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        return [], [f"ranked: manifest.json in {run_dir} is unreadable ({exc}); claims not grounded"]
     errs, warns = [], []
     for e in data["episodes"]:
         eid, row = e["episode_id"], by_id.get(e["episode_id"])
@@ -314,13 +360,18 @@ def ranked_verify(data: dict, run_dir: Path) -> tuple[list[str], list[str]]:
                 errs.append(f"ranked: {eid}: has claims but the manifest says no real transcript")
             continue
         last, grams = _load_transcript(run_dir, row)
+        if last is None:
+            if e["claims"]:
+                warns.append(f"ranked: {eid}: transcript {row.get('file')} is missing or has no [h:mm:ss] lines; "
+                             f"{len(e['claims'])} claims not grounded")
+            continue
         for i, c in enumerate(e["claims"]):
-            if last is not None and c["timestamp"] > last + TS_SLACK:
+            if c["timestamp"] > last + TS_SLACK:
                 errs.append(f"ranked: {eid} claims[{i}]: timestamp {c['timestamp']}s is past the end of the transcript ({int(last)}s)")
             if run := _longest_copy(c["claim"], grams):
                 errs.append(f"ranked: {eid} claims[{i}]: {len(run)} consecutive words copied verbatim from the transcript")
         warns += _number_warnings(_ranked_cites(e), _number_index(run_dir, row))
-    return errs, [w.replace("report: ", "ranked: ", 1).replace(" signal[", " claims[") for w in warns]
+    return errs, dedupe_warnings([w.replace("report: ", "ranked: ", 1).replace(" signal[", " claims[") for w in warns])
 
 
 OFFSET_MIN_SECONDS = 45  # median cite-vs-video drift that is reported
@@ -350,11 +401,15 @@ def estimate_offset(ep: dict, index: list[tuple[float, str]]) -> tuple[float, in
 
 def caption_warn(data: dict, run_dir: Path, fetch=None) -> list[str]:
     """Opt-in, network: compare cites with the linked YouTube video's captions (youtube_url in the report or
-    selected.json). Same number-near-timestamp warnings plus a per-episode drift estimate. Never raises."""
+    selected.json). Same number-near-timestamp warnings plus a per-episode drift estimate. Never raises: a fetch
+    failure, empty captions or malformed caption segments give one "skipped:" line for that episode."""
     from .links import yt_id
 
     if fetch is None:
-        from .transcribe import from_youtube as fetch
+        try:
+            from .transcribe import from_youtube as fetch
+        except Exception as exc:  # optional dependency missing
+            return [f"report: captions check skipped: cannot load the YouTube caption fetcher ({type(exc).__name__}: {exc})"]
     sel = {}
     try:
         if (Path(run_dir) / "selected.json").exists():
@@ -369,20 +424,29 @@ def caption_warn(data: dict, run_dir: Path, fetch=None) -> list[str]:
         vid = yt_id(url)
         if not vid:
             continue
+        who = f"report: {eid}{_short(ep.get('headline'))}"
         try:
             segs = fetch(vid)
-        except Exception:
-            segs = None
-        if not segs:
-            out.append(f"report: {eid}: could not fetch YouTube captions for {vid}; skipped")
+        except Exception as exc:
+            out.append(f"{who}: skipped: could not fetch YouTube captions for {vid} ({type(exc).__name__}); "
+                       f"cites not checked against captions")
             continue
-        index = spoken_numbers(_stream(segs))
-        out += _number_warnings(ep, index, "YouTube captions")
-        est = estimate_offset(ep, index)
+        if not segs:
+            out.append(f"{who}: skipped: no YouTube captions for {vid}; cites not checked against captions")
+            continue
+        try:
+            index = spoken_numbers(_stream(segs))
+            lines = _number_warnings(ep, index, "captions")
+            est = estimate_offset(ep, index)
+        except Exception as exc:  # malformed caption segments
+            out.append(f"{who}: skipped: unusable YouTube captions for {vid} ({type(exc).__name__}); "
+                       f"cites not checked against captions")
+            continue
+        out += lines
         if est and est[1] >= OFFSET_MIN_NUMBERS and abs(est[0]) >= OFFSET_MIN_SECONDS:
-            out.append(f"report: episode {eid} timestamps run {round(abs(est[0]))} s {'later' if est[0] > 0 else 'earlier'} "
-                       f"than the linked YouTube video (median over {est[1]} numbers)")
-    return out
+            out.append(f"{who}: cite timestamps run {round(abs(est[0]))}s {'later' if est[0] > 0 else 'earlier'} "
+                       f"than the linked YouTube video (median over {est[1]} numbers); shift them to match the video")
+    return dedupe_warnings(out)
 
 
 def cite(c: dict, url: str) -> str:

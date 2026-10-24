@@ -57,20 +57,68 @@ def yt_id(url: str | None) -> str | None:
     return m.group(1) if m else None
 
 
+_SHOW_FILLER = {"the", "show", "podcast"}
+_CLIP = re.compile(r"#shorts?\b|\bshorts?\b|\bclips?\b|\bhighlights?\b|\btrailer\b", re.I)
+_NAME_STOP = {"the", "a", "an", "and", "or", "of", "on", "in", "at", "to", "for", "how", "why", "what", "when", "who", "is", "are",
+              "new", "inside", "from", "with", "this", "that", "full", "episode", "interview", "part", "live", "special",
+              "wall", "street", "silicon", "valley", "york", "white", "house", "capitol", "hill", "bay", "area"}
+_GENERIC = _NAME_STOP | {"about", "billion", "million", "trillion", "still", "year", "years", "says", "said", "just", "next", "will",
+                         "your", "their", "into", "over", "more", "most", "than", "talks", "founder", "chief", "founders", "future"}
+
+
+def _show_core(name: str) -> str:
+    return " ".join(w for w in re.sub(r"[^a-z0-9]+", " ", (name or "").lower()).split() if w not in _SHOW_FILLER)
+
+
+def _channel_matches_show(show: str, channel: str) -> bool:
+    """Channel is the show's: fuzzy match, or one name is a short form of the other once 'the'/'show'/'podcast' are dropped."""
+    if not show or not channel:
+        return False
+    if similar(show, channel) >= 0.5:
+        return True
+    a, b = _show_core(show), _show_core(channel)
+    return len(min(a, b, key=len)) >= 3 and (a == b or a.startswith(b + " ") or b.startswith(a + " "))
+
+
+def _name_pairs(title: str) -> set[str]:
+    """Adjacent capitalised words ("Andy Jassy"), skipping pairs that include a stopword like 'The' or 'How'."""
+    pairs = set()
+    for run in re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+", title):
+        words = run.split()
+        pairs |= {f"{x} {y}".lower() for x, y in zip(words, words[1:]) if x.lower() not in _NAME_STOP and y.lower() not in _NAME_STOP}
+    return pairs
+
+
+def _distinctive(title: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z]{4,}", title.lower()) if w not in _GENERIC}
+
+
+def _days_apart(a: str | None, b: str | None) -> int | None:
+    try:
+        return abs((date.fromisoformat(str(a)[:10]) - date.fromisoformat(str(b)[:10])).days)
+    except ValueError:
+        return None
+
+
 def yt_matches(ep: dict, vtitle: str, channel: str = "", published: str | None = None, max_days: int = 4) -> bool:
-    """Strict: title close (or a guest named in the title, from the show's channel) and, if known, date within max_days."""
+    """Strict: title close (or a guest named in the title, from the show's channel) and, if known, date within max_days.
+    Third rule, only with BOTH the show's channel and a known date within max_days: the titles share a person-like name
+    ("Andy Jassy") or 4+ distinctive words, the titles are at least half alike, and the video is not a clip/short. YouTube retitles episodes, so similarity alone misses real matches."""
     title, show = ep.get("title", ""), ep.get("show") or ep.get("source") or ""
+    if _CLIP.search(vtitle) and not _CLIP.search(title):  # a clip or short is not the episode
+        return False
     guests = [g["name"] if isinstance(g, dict) else str(g) for g in ep.get("guests") or []
               if not (isinstance(g, dict) and "host" in (g.get("role") or "").lower())]
     guests = [g for g in guests if g and len(g.split()) >= 2]
     chan_ok = bool(channel) and similar(show, channel) >= 0.5
     ok = similar(title, vtitle) >= 0.75 or (chan_ok and any(g.lower() in vtitle.lower() for g in guests))
-    if ok and published and ep.get("published"):
-        try:
-            ok = abs((date.fromisoformat(published[:10]) - date.fromisoformat(str(ep["published"])[:10])).days) <= max_days
-        except ValueError:
-            pass
-    return ok
+    gap = _days_apart(published, ep.get("published")) if published and ep.get("published") else None
+    if ok:
+        return gap is None or gap <= max_days
+    if gap is not None and gap <= max_days and _channel_matches_show(show, channel) and not _CLIP.search(vtitle) \
+            and similar(title, vtitle) >= 0.5:
+        return bool(_name_pairs(title) & _name_pairs(vtitle)) or len(_distinctive(title) & _distinctive(vtitle)) >= 4
+    return False
 
 
 def yt_channel_rss(ep: dict, channel_id: str, fetch=_text) -> str | None:
@@ -94,7 +142,7 @@ def yt_oembed(vid: str, fetch=_text) -> dict | None:
 def yt_verify(ep: dict, url: str, published: str | None = None, fetch=_text) -> str | None:
     """Agent- or search-supplied URL: keep it only if oEmbed title/channel match the episode."""
     vid = yt_id(url)
-    meta = yt_oembed(vid, fetch) if vid else None
+    meta = yt_oembed(vid, fetch) if vid else None  # oEmbed has no upload date: only the caller's date for THIS video counts
     if meta and yt_matches(ep, meta.get("title", ""), meta.get("author_name", ""), published):
         return f"https://www.youtube.com/watch?v={vid}"
     return None

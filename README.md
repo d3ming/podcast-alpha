@@ -5,9 +5,11 @@ A Grok Bot does the judgment (claims, scores, ranking) by following [`prompts/ra
 There are no LLM API keys or calls in this repo.
 
 ```
-podcast-alpha fetch --days 7          # code: write runs/<date>/ with transcripts and manifest.json
-# bot: read the run folder, follow prompts/rank.md, write runs/<date>/ranked.json
-podcast-alpha publish runs/<date>/ranked.json   # code: validate, render digest markdown, optional Notion
+podcast-alpha fetch --days 7 --youtube-mirror   # code: write runs/<date>/ with transcripts and manifest.json
+podcast-alpha rank-prep runs/<date>             # code: condense transcripts, split into reader batches (rank/batch-N-in.json)
+# bots: one reader per batch follows prompts/rank.md, writes rank/batch-N-out.json
+podcast-alpha rank-merge runs/<date>            # code: dedupe, order, notes, validate -> ranked.json
+podcast-alpha publish runs/<date>/ranked.json --top 15   # code: grounding checks, render digest markdown, optional Notion
 ```
 
 For the daily loop (`daily`, `transcribe`, `tmtb-import`, select, report) see [AGENTS.md](AGENTS.md).
@@ -93,7 +95,7 @@ page title; hosting-platform pages are never scraped for YouTube). Edit any valu
 
 ## Holdings
 
-`podcast_alpha/holdings.py` can fetch the folio JSON at run time so a bot can weigh relevance privately.
+`podcast_alpha/holdings.py` can fetch the folio JSON at run time so a bot can weigh relevance privately. The endpoint comes from the `PA_FOLIO_URL` environment variable (no default; unset means no weighting).
 Holdings and weights never go into the repo, `ranked.json`, the digest or Notion; publish rejects them.
 
 Out of scope for v0.1: claim verification against filings, speaker diarization, scheduling.

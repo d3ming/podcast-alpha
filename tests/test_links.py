@@ -31,6 +31,58 @@ def test_yt_matching_strict():
     assert not links.yt_matches(EP, "Sarah Guo on startups", "No Priors", None)  # host name doesn't count
 
 
+JASSY = {"title": "Amazon CEO Andy Jassy on the $220 Billion AI Buildout", "show": "The a16z Show", "published": "2026-10-23"}
+JASSY_V = "Amazon CEO Andy Jassy: $220 Billion, Still Can't Meet AI Demand"
+
+
+def test_yt_matches_retitled_video_needs_channel_and_date():
+    assert links.similar(JASSY["title"], JASSY_V) < 0.75
+    assert links.yt_matches(JASSY, JASSY_V, "a16z", "2026-10-23")
+    assert links.yt_matches(JASSY, JASSY_V, "a16z", "2026-10-23T14:00:00+00:00")
+    assert links.yt_matches(JASSY, JASSY_V, "The a16z Show", "2026-10-25")  # within max_days
+    # both conditions are mandatory
+    assert not links.yt_matches(JASSY, JASSY_V, "a16z", None)  # no date
+    assert not links.yt_matches(JASSY, JASSY_V, "a16z", "garbage")
+    assert not links.yt_matches({**JASSY, "published": None}, JASSY_V, "a16z", "2026-10-23")
+    assert not links.yt_matches(JASSY, JASSY_V, "a16z", "2026-10-13")  # right names, 10 days apart
+    assert not links.yt_matches(JASSY, JASSY_V, "CNBC Television", "2026-10-23")  # other channel
+    assert not links.yt_matches(JASSY, JASSY_V, "", "2026-10-23")
+    # same channel and date, different guest: no shared name, generic words ("billion", "demand"...) don't count
+    assert not links.yt_matches(JASSY, "Microsoft CEO Satya Nadella: $220 Billion, Still Can't Meet AI Demand", "a16z", "2026-10-23")
+    # shared title-case words that are not a name ("The New") do not count
+    assert not links.yt_matches({**JASSY, "title": "The New Era of Chips"}, "The New Rules of Software", "a16z", "2026-10-23")
+
+
+def test_yt_matches_four_distinctive_words_without_a_name():
+    ep = {"title": "why robotics startups are finally raising serious money", "show": "The a16z Show", "published": "2026-10-23"}
+    assert links.yt_matches(ep, "Robotics startups raising serious capital", "a16z", "2026-10-23")
+    assert not links.yt_matches(ep, "Robotics startups raising serious capital", "a16z", "2026-09-01")
+    assert not links.yt_matches(ep, "Robotics startups and chips", "a16z", "2026-10-23")  # only 2 shared
+
+
+def test_yt_verify_needs_the_callers_date_for_this_video():
+    fetch = lambda url, **k: json.dumps({"title": JASSY_V, "author_name": "a16z"})
+    u = "https://youtu.be/abcdefghijk"
+    assert links.yt_verify(JASSY, u, fetch=fetch) is None  # no date known: stay strict
+    assert links.yt_verify(JASSY, u, "2026-10-23", fetch=fetch) == "https://www.youtube.com/watch?v=abcdefghijk"
+    # the agent's youtube_published describes the agent's URL, not a video found later by search or show notes
+    assert links.yt_verify({**JASSY, "youtube_published": "2026-10-23"}, u, fetch=fetch) is None
+
+
+def test_third_rule_rejects_clips_and_place_names():
+    assert not links.yt_matches(JASSY, "Andy Jassy on why AWS margins will hold #shorts", "a16z", "2026-10-23")
+    assert not links.yt_matches(JASSY, "Amazon CEO Andy Jassy clip: $220 Billion AI demand", "a16z", "2026-10-23")
+    ep = {"title": "Wall Street bets on rate cuts and tech earnings", "show": "Bloomberg Tech", "published": "2026-10-20"}
+    assert not links.yt_matches(ep, "Wall Street waits on Fed", "Bloomberg Tech", "2026-10-20")
+
+
+def test_channel_rss_accepts_retitled_video_by_published_date():
+    xml = ("<feed><entry><yt:videoId>abcdefghijk</yt:videoId><title>Amazon CEO Andy Jassy: $220 Billion, Still Can&#39;t Meet AI Demand</title>"
+           "<published>2026-10-23T09:00:00+00:00</published></entry></feed>")
+    assert links.yt_channel_rss(JASSY, "UC1", fetch=lambda u, **k: xml) == "https://www.youtube.com/watch?v=abcdefghijk"
+    assert links.yt_channel_rss({**JASSY, "published": "2026-10-01"}, "UC1", fetch=lambda u, **k: xml) is None
+
+
 def test_yt_verify_rejects_wrong_video():
     fetch = lambda url, **k: json.dumps({"title": "Reid Hoffman on hype in AI", "author_name": "No Priors"})
     assert links.yt_verify(EP, "https://youtu.be/abcdefghijk", fetch=fetch) is None

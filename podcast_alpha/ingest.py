@@ -5,6 +5,7 @@ import re
 import json
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -98,9 +99,12 @@ AUDIO_URL = re.compile(r"\.(mp3|m4a|aac|ogg|opus|wav)(\?|$)|podtrac|swap\.fm|tra
 
 
 def page_url(entry, audio: str | None, feed_link: str | None = None) -> str:
-    """Episode page for display: item link unless it is the enclosure or a tracking/audio URL; else the show page."""
-    cands = [entry.get("link")] + [l.get("href") for l in entry.get("links", [])
-                                   if l.get("rel") in (None, "alternate") and not (l.get("type") or "").startswith("audio")]
+    """Episode page for display. In order: item link, item id/guid when it is itself a page URL, other non-audio
+    alternate links, then the show page. Enclosure, audio and tracking URLs never qualify; nothing is invented."""
+    guid = entry.get("id") or entry.get("guid")
+    cands = [entry.get("link"), guid if isinstance(guid, str) and re.match(r"https?://", guid) else None]
+    cands += [l.get("href") for l in entry.get("links", [])
+              if l.get("rel") in (None, "alternate") and not (l.get("type") or "").startswith("audio")]
     for u in cands:
         if u and u != audio and not AUDIO_URL.search(u):
             return u
@@ -190,13 +194,23 @@ def discover(sources: list[Source], now: datetime, days: int, t3_cap: int, per_s
     eps: list[Episode] = []
     t3 = 0
     health = {} if health is None else health
-    for src in sources:
+
+    def look(src):
         try:
-            found, how = find(src, now, days)
+            return find(src, now, days), None
         except Exception as exc:
+            return None, exc
+
+    # Feeds are independent network calls: fetch them side by side, then apply the per-source and tier-3 caps in source order
+    # so the result is the same as a sequential run.
+    with ThreadPoolExecutor(min(8, max(1, len(sources)))) as pool:
+        looked = list(pool.map(look, sources))
+    for src, (res, exc) in zip(sources, looked):
+        if exc is not None:
             print(f"[ingest] {src.id}: ERROR {exc}")
             health[src.id] = {"via": None, "found": 0, "kept": 0, "error": str(exc)}
             continue
+        found, how = res
         n = len(found)
         found.sort(key=lambda e: e.published_at, reverse=True)
         found = found[:per_source]

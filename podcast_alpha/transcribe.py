@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import threading
 
 
 TS = re.compile(r"^(?:(\d+):)?(\d{1,2}):(\d{2})(?:[.,](\d+))?")
@@ -76,17 +77,30 @@ def from_rss_tag(links: list[dict], used: list | None = None) -> list[dict] | No
     return None
 
 
+YT_BLOCKED = threading.Event()  # set once YouTube refuses this IP: more requests only prolong the block
+_YT_NO_RETRY = {"TranscriptsDisabled", "NoTranscriptFound", "VideoUnavailable", "VideoUnplayable", "InvalidVideoId"}
+
+
 def from_youtube(video_id: str) -> list[dict] | None:
+    """Captions for a video. A block, or a video with no captions, ends the lookup at once; only odd errors are retried."""
     from youtube_transcript_api import YouTubeTranscriptApi
 
     import time
 
+    if YT_BLOCKED.is_set():
+        return None
     for attempt in range(3):
         try:
             t = YouTubeTranscriptApi().fetch(video_id, languages=["en", "en-US"])
             break
-        except Exception:
-            if attempt == 2:
+        except Exception as exc:
+            kind = type(exc).__name__
+            if kind in ("IpBlocked", "RequestBlocked"):
+                if not YT_BLOCKED.is_set():
+                    print("[youtube] this IP is blocked by YouTube; skipping captions and mirror lookups for the rest of the run")
+                YT_BLOCKED.set()
+                return None
+            if kind in _YT_NO_RETRY or attempt == 2:
                 return None
             time.sleep(5 * (attempt + 1))
     return [{"start": s.start, "speaker": None, "text": s.text.replace("\n", " ")} for s in t.snippets]
@@ -102,14 +116,24 @@ def title_match(a: str, b: str) -> float:
 
 
 def find_youtube_mirror(source_name: str, title: str) -> str | None:
-    """Many audio-first shows also post to YouTube; use its captions when titles match."""
+    """Many audio-first shows also post to YouTube; use its captions when the title nearly matches, or loosely matches on a
+    channel that looks like the show. Clips and shorts never count (a clip's captions are not the episode)."""
     import subprocess
 
-    res = subprocess.run(["yt-dlp", "--flat-playlist", "--print", "%(id)s\t%(title)s",
+    from .links import similar
+
+    if YT_BLOCKED.is_set():
+        return None
+    res = subprocess.run(["yt-dlp", "--flat-playlist", "--print", "%(id)s\t%(title)s\t%(channel)s",
                           f"ytsearch3:{source_name} {title}"], capture_output=True, text=True, timeout=120)
     for line in res.stdout.splitlines():
-        vid, _, ytitle = line.partition("\t")
-        if title_match(title, ytitle) >= 0.6:
+        vid, _, rest = line.partition("\t")
+        ytitle, _, channel = rest.partition("\t")
+        tm = title_match(title, ytitle)
+        if re.search(r"\bclips?\b|\bshorts?\b|\bhighlights?\b", f"{channel} {ytitle}", re.I) and not re.search(r"\bclips?\b", title, re.I):
+            continue  # an official clips channel or a short is not the full episode
+        # the show's own channel needs a loose title match; a network or label's channel (Bloomberg Podcasts for Odd Lots) needs a near-exact one
+        if tm >= 0.85 or (tm >= 0.6 and (not channel or channel in ("NA", "None") or similar(source_name, channel) >= 0.5)):
             return vid
     return None
 

@@ -40,6 +40,8 @@ has no faster-whisper). `daily` checks this up front and pins the queued `transc
    Each manifest row keeps `transcript_url` (publisher transcript, or the YouTube video whose captions were used); `report` and `publish`
    link it from Notion. Older runs: `podcast-alpha transcript-links runs/<name>` backfills it from the feeds.
    `daily` prints feed errors; `manifest.sources` holds per-source {found, kept, error} and `stats` shows the latest run's errors.
+   Feeds and transcript lookups run in parallel (a lookup error never aborts the run; the episode stays whisper-able and is not
+   recorded as seen). If YouTube blocks the IP the captions and mirror lookups stop for the rest of the run.
    On the Mac add `--youtube-mirror` to caption episodes that have no feed transcript from the same episode on YouTube.
 2. Recall check, next morning: the TMTB email lands ~2:40 PM PT, after the 9 AM report, so check it against the
    previous day's run: `podcast-alpha tmtb-import email.txt` (defaults to `--date yesterday`, i.e. `runs/<yesterday>`;
@@ -62,7 +64,7 @@ has no faster-whisper). `daily` checks this up front and pins the queued `transc
    read them and fix the cite (a warning is a likely wrong number or wrong time). On the Mac, `check report <file> --captions`
    compares against the YouTube captions and flags timestamps that run late or early versus the linked video.
 
-The weekly ranking path (`fetch`, `prompts/rank.md`, `publish`) and the Mac YouTube fallback are in README.md.
+The weekly ranking path (`fetch`, `rank-prep`, readers per `prompts/rank.md`, `rank-merge`, `publish --top 15`) and the Mac YouTube fallback are in README.md.
 
 ## Rules
 
@@ -78,7 +80,7 @@ The weekly ranking path (`fetch`, `prompts/rank.md`, `publish`) and the Mac YouT
 - `podcast-alpha stats` prints a trend table across runs: per-stage durations, active, idle (transcribe end → select start), wall, transcribed/total, recall.
 - Download failures retry 5xx/429/timeouts with backoff (PA_DOWNLOAD_RETRIES, PA_DOWNLOAD_BACKOFF); 4xx is final. Each failure lands in `manifest.failures` and `transcribe.failed.log`.
 - Triage: `transcribe` (and `daily`, which queues it) scores untranscribed episodes on metadata (people.yaml person
-  search/name match, tier, named guest, title keywords, recency, news and rerun penalties), stores `triage`
+  search/name match, tier, named guest(s) in the title ("A B & C D:" pair scores more; "CEO A B", "A B, CEO", "| A B", "A B on/:"), title keywords, recency, news and rerun penalties), stores `triage`
   {score, reasons, rank, whisper} per episode and whispers only the top `--top` (default 8) plus every core-person
   episode. `--top 0` whispers all; `--retriage` recomputes. Deterministic (ties broken by episode_id).
 - Recall: `tmtb-import` writes `recall` {tmtb, picks, hits, recall, hit, missed, found_in_run} into the run's

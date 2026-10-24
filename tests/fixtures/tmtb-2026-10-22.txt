@@ -1,14 +1,14 @@
 Today’s Essential Episodes:
-NVIDIA CEO Jensen Huang on Neocloud Financing, Why He Waves Off Anthropic Slowdown Fears, China and the Substrate Bottleneck
-CNBC’s Morning Call: Arjun Kharpal interviews Jensen Huang, founder and CEO of NVIDIA, at GTC Berlin
-Inside Intel’s Fabs: CTO Pushkar Ranade on Why Tool Supply Caps Leading-Edge Growth, Plus High-NA EUV, 14A and Chips in 2045
-Dwarkesh Podcast, with Dwarkesh Patel, Intel CTO Pushkar Ranade, process-development lead Chris Auth, Jack Kavalieros, Tyler Osborne and Ken Fisher
-CrowdStrike CEO George Kurtz on the ‘Agent State’ as the New Apex Predator, 27-Second Breakouts and the Safemind Lab Built With NVIDIA
-No Priors, with Sarah Guo, Elad Gil and George Kurtz, president and CEO of CrowdStrike
-IBM’s Arvind Krishna and Palo Alto’s Nikesh Arora on Quantum’s 2030 Threat to Encryption, Open-Weight Models and SaaS Consolidation
-All-In Podcast, with Arvind Krishna, chairman and CEO of IBM, and Nikesh Arora, chairman and CEO of Palo Alto Networks
-Palo Alto Networks CEO Nikesh Arora on the PHP2Shell Flaw, AI-Found Vulnerabilities, Personal Agents and Insatiable Compute Demand
-TBPN, with Jordi Hays and Nikesh Arora, chairman and CEO of Palo Alto Networks
-Bill Gates on 20 Years of ‘Tumultuous’ AI Disruption, Why Labs Can’t Police Themselves and a ‘Police Layer’ for Alignment
-Decoder with Nilay Patel, with Bill Gates, co-founder of Microsoft and chair of the Gates Foundation
-Produced by Ethmos: AI-assisted summaries.
+Helix Dynamics CEO Orrin Vance on Funding New Plants, Order Backlogs and the Wafer Supply Squeeze
+Bayview Business’s Morning Desk: Mara Lindqvist interviews Orrin Vance, founder and CEO of Helix Dynamics, at a Hamburg summit
+Meridian CTO Pavel Ostrander on Equipment Limits, Lithography Roadmaps and the Next Decade of Chip Design
+Deep Silicon Podcast, with Dana Whitfield, Meridian CTO Pavel Ostrander, process-development lead Lena Brauer, Tomas Ilves and Rhea Okonkwo
+Vireo Security CEO Gideon Marsh on Autonomous Attackers, Faster Intrusions and a Joint Research Lab
+Signal Hour, with Priya Raman, Tomas Weller and Gideon Marsh, president and CEO of Vireo Security
+Corvane’s Hollis Brandt and Northgate’s Selene Park on Post-Quantum Planning, Model Licensing and Software Roll-ups
+Fourth Quarter Podcast, with Hollis Brandt, chairman and CEO of Corvane, and Selene Park, chairman and CEO of Northgate Systems
+Northgate Systems CEO Selene Park on a New Protocol Bug, Automated Bug Hunting and Datacenter Appetite
+Tech Brunch Live, with Marcus Hale and Selene Park, chairman and CEO of Northgate Systems
+Edith Marlowe on Two Decades of Platform Change, Industry Self-Policing and an Independent Review Layer
+Open Channel with Jonas Reid, with Edith Marlowe, co-founder of Lumen Systems and chair of the Marlowe Foundation
+Produced by Example Media: synthetic fixture for tests.

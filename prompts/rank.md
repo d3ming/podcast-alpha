@@ -3,6 +3,13 @@
 Input: a run folder from `podcast-alpha fetch` (`manifest.json` plus one `.md` per episode).
 Output: `ranked.json` that validates against `schema/ranked.schema.json`. Check it with `podcast-alpha publish ranked.json`.
 
+Fast path for a big week: `podcast-alpha rank-prep runs/<name>` writes `rank/batch-N-in.json` (episodes with real transcripts,
+condensed to a `[timestamp]` every 30 s, balanced by size). Give each batch to one reader, who scores and extracts claims for the
+episodes in it and writes `rank/batch-N-out.json`: a JSON list of `{episode_id, title, url, source, tier, published, score, reason,
+claims}`. Cite timestamps from the condensed text. Then `podcast-alpha rank-merge runs/<name>` dedupes episodes that share a
+transcript, orders by score, tier, recency, and writes `ranked.json`; `publish` rejects ids, timestamps or numbers that the
+transcripts do not support. Score on the rubric below across the whole batch, not against other batches (merge does not rescale).
+
 ## 1. Read and extract claims
 
 For each episode with a transcript, read it and keep the claims an investor could act on or check.
