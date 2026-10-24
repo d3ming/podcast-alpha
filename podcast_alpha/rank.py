@@ -128,7 +128,7 @@ def merge(run_dir: Path, ranked_by: str, week_of: str | None = None) -> dict:
              f"transcript and are not ranked, so audio-only shows are underrepresented."
              + (f" Same-transcript duplicates merged: {'; '.join(t[:60] for t in dropped)}." if dropped else "")
              + (f" Tier-3 cap (2, never top 3) removed or moved: {'; '.join(t[:60] for t in cut)}." if cut else ""))
-    return {"week_of": week_of or min(e["published"][:10] for e in man["episodes"]), "run_dir": str(run_dir),
+    return {"week_of": week_of or min(e["published"][:10] for e in man["episodes"]), "run_dir": f"runs/{run_dir.name}",
             "ranked_by": ranked_by, "notes": notes, "episodes": eps}
 
 
