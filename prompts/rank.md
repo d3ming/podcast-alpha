@@ -1,14 +1,11 @@
-# Ranking rubric (for the Grok Bot doing the analysis)
+# Ranking rubric (weekly reader agents)
 
-Input: a run folder from `podcast-alpha fetch` (`manifest.json` plus one `.md` per episode).
-Output: `ranked.json` that validates against `schema/ranked.schema.json`. Check it with `podcast-alpha publish ranked.json`.
-
-Fast path for a big week: `podcast-alpha rank-prep runs/<name>` writes `rank/batch-N-in.json` (episodes with real transcripts,
-condensed to a `[timestamp]` every 30 s, balanced by size). Give each batch to one reader, who scores and extracts claims for the
-episodes in it and writes `rank/batch-N-out.json`: a JSON list of `{episode_id, title, url, source, tier, published, score, reason,
-claims}`. Cite timestamps from the condensed text. Then `podcast-alpha rank-merge runs/<name>` dedupes episodes that share a
-transcript, orders by score, tier, recency, and writes `ranked.json`; `publish` rejects ids, timestamps or numbers that the
-transcripts do not support. Score on the rubric below across the whole batch, not against other batches (merge does not rescale).
+You are one reader. Input: `rank/batch-N-in.json`, written by `podcast-alpha rank-prep` (episodes with real transcripts,
+condensed to a `[timestamp]` every 30 s). Output: `rank/batch-N-out.json`, a JSON list of `{episode_id, title, url, source,
+tier, published, score, reason, claims}`, one entry per input episode. Cite timestamps from the condensed text.
+`rank-merge` combines the batches into `ranked.json` (`schema/ranked.schema.json`) and rejects ids it does not know;
+`publish` rejects timestamps or numbers the transcripts do not support. Merge does not rescale scores, so score against
+the absolute anchors below, not against the other episodes in your batch.
 
 ## 1. Read and extract claims
 
@@ -36,8 +33,8 @@ Anchors:
 - 3-4: thin, mostly opinion, or off-topic for investing.
 - 1-2: hype, listicle, or nothing usable.
 
-Forced spread across the batch: about the top 10% at 8 or more, the median near 5, and at least 30% at 4 or less.
-If your scores cluster, re-rank and spread them. Ties are fine, clusters are not.
+Sanity check on your batch: a typical week has about the top 10% at 8 or more, the median near 5, and at least 30% at
+4 or less. If your scores cluster, re-read the anchors and spread them. Ties are fine, clusters are not.
 
 ## 3. Tier rules
 

@@ -1,88 +1,55 @@
 # AGENTS.md
 
-Daily podcast intel. Code fetches, transcribes and renders; the agent selects and writes the report. Free sources only:
-RSS, iTunes Search, faster-whisper on CPU. No API keys except optional Notion.
+Operating manual for the agent that runs podcast-alpha, and for anyone changing its code. Read
+[docs/architecture.md](docs/architecture.md) once for how the parts fit; [docs/reference.md](docs/reference.md) has every
+command and flag.
 
-## Setup
+## Run it
 
-```
-python3 -m venv .venv && .venv/bin/pip install -e '.[dev,whisper]'
-.venv/bin/pytest -q
-```
+- **Daily:** follow [prompts/daily.md](prompts/daily.md). It starts with `podcast-alpha today` and then loops on
+  `podcast-alpha status runs/<name> --json --record`, doing the `next` action each time.
+- **Weekly:** follow [prompts/weekly.md](prompts/weekly.md).
+- **Environment:** `podcast-alpha doctor` checks everything in a few seconds. Run it first on a new machine.
 
-Commands below use the installed `podcast-alpha` entry point. On the box run it from the venv that has
-faster-whisper: `/workspace/pa-venv/bin/podcast-alpha` (the `~/.local/bin/podcast-alpha` shim uses system Python, which
-has no faster-whisper). `daily` checks this up front and pins the queued `transcribe` to an interpreter that has it
-(`PA_PYTHON`, else the current one, else `.venv`, else `/workspace/pa-venv`), and fails fast if none does.
-
-## Layout
-
-- `sources.yaml` shows and free keynote/earnings-call feeds; `people.yaml` people watchlist (no holdings).
-- Manifest `url` is the episode page (feed item link, else show page; never a tracking mp3); `audio_url` is the enclosure.
-- People with common names take `context:` in `people.yaml`; iTunes hits in sports/fiction/etc. genres are dropped.
-- `runs/<name>/` (git-ignored): `manifest.json`, one `.md` per episode, `transcribe.log`, then agent outputs.
-- `show_links.yaml`: per-podcast site, YouTube, Apple, Spotify links keyed by the `sources.yaml` id. Correct a link by editing it;
-  `podcast-alpha show-links` (`--ytsearch` on the Mac) only fills blanks and never overwrites. Run it after adding a source. `links` falls
-  back to a show's Apple/site page when no episode page is found; the weekly digest prints a `Show:` line from it.
-- `data/podcast_alpha.sqlite` dedupe DB. `prompts/` agent instructions. `schema/` JSON schemas.
-
-## Daily loop
-
-1. `podcast-alpha daily --hours 48 --run-name <YYYY-MM-DD>`: people search first, then channels; queues `transcribe` in the
-   background (log: `runs/<name>/transcribe.log`). Wait for `finished` in the log, or rerun
-   `podcast-alpha transcribe runs/<name>` (resumable; `--minutes` budget, default 600).
-   Transcripts under 5 KB (`--min-transcript-chars`) are show descriptions: the manifest marks them
-   `fallback_text: true`, `transcript_source: fallback`, `has_transcript: false`, and `transcribe` whispers them
-   (people first). News/market-recap shows (`news: true` in `sources.yaml`: Halftime, Squawk, Power Lunch, WSJ TNB)
-   are whispered last; `--skip-news` skips them. Transcripts already in another run folder (same episode id,
-   enclosure, or show + title) are reused, not re-whispered. Episodes outside the window or flagged as replays/re-airs are excluded (`excluded` in the manifest).
-   Rerunning with an existing `--run-name` only adds new episodes (it refuses while `transcribe.lock` names a live pid).
-   Each manifest row keeps `transcript_url` (publisher transcript, or the YouTube video whose captions were used); `report` and `publish`
-   link it from Notion. Older runs: `podcast-alpha transcript-links runs/<name>` backfills it from the feeds.
-   `daily` prints feed errors; `manifest.sources` holds per-source {found, kept, error} and `stats` shows the latest run's errors.
-   Feeds and transcript lookups run in parallel (a lookup error never aborts the run; the episode stays whisper-able and is not
-   recorded as seen). If YouTube blocks the IP the captions and mirror lookups stop for the rest of the run.
-   On the Mac add `--youtube-mirror` to caption episodes that have no feed transcript from the same episode on YouTube.
-2. Recall check, next morning: the TMTB email lands ~2:40 PM PT, after the 9 AM report, so check it against the
-   previous day's run: `podcast-alpha tmtb-import email.txt` (defaults to `--date yesterday`, i.e. `runs/<yesterday>`;
-   `--run runs/<name>` or `--date YYYY-MM-DD` to override; `-` reads stdin). Writes `seeds.json`, `missed.json`, `missed.md`; fetch or whisper anything
-   important in `missed.md` before selecting. Paste or export the email body; never scrape Substack.
-3. Select exactly 3 strict picks (novel exec/investor signal, no recaps or news shows): follow `prompts/select.md`, write `runs/<name>/selected.json`, check with `podcast-alpha check <file>` (schema inferred from selected*.json / report*.json).
-   `check` also grounds the file in the run: ids and transcript flags against the manifest, no reruns, one pick per person;
-   for a report also timestamps inside the transcript, no 12-word verbatim runs, same episodes as `selected.json`. `report`
-   and `links` run the same checks and refuse on errors.
-3b. Links: find each pick's YouTube video by web search and set `youtube_url`/`youtube_published` in `selected.json` only on a
-   title-or-guest + date match (never guess), then run `podcast-alpha links runs/<name>` (verifies via oEmbed, adds Apple/
-   Spotify/episode-page `listen_url`; see `prompts/report.md`). On the Mac add `links --ytsearch` (yt-dlp search, still
-   oEmbed-verified); it is not for the box.
-4. Report: follow `prompts/report.md`, write `runs/<name>/report.json` (`schema/report.schema.json`).
-5. Render/publish: `podcast-alpha report runs/<name>/report.json` writes `report.md`; with `NOTION_TOKEN` and a parent page
-   (`NOTION_PARENT_PAGE_ID`, else `notion_parent_page_id` in `publish.yaml`, else `--notion-parent`) it also creates
-   the Notion page. Without `NOTION_TOKEN` it skips the API, still writes `report.md` and exits 0; publish `report.md`
-   through a Notion connector. `report.md` opens with Key Insights, then Essential Episodes.
-   `check`/`report` also print `warning:` lines when a number in a cite is not spoken within 2 minutes of its timestamp;
-   read them and fix the cite (a warning is a likely wrong number or wrong time). On the Mac, `check report <file> --captions`
-   compares against the YouTube captions and flags timestamps that run late or early versus the linked video.
-
-The weekly ranking path (`fetch`, `rank-prep`, readers per `prompts/rank.md`, `rank-merge`, `publish --top 15`) and the Mac YouTube fallback are in README.md.
+Use the `podcast-alpha` from the venv that has a Whisper backend (`.venv/bin/podcast-alpha`, or
+`/workspace/pa-venv/bin/podcast-alpha` on the Linux server). On Apple silicon install `.[dev,whisper,mac]`.
 
 ## Rules
 
-- Public repo: never commit run folders, holdings, weights, tokens or copied newsletter text.
-- No PR workflow: commit and push straight to `main`; no feature branches or pull requests.
-- Write `manifest.json` only through `podcast_alpha.manifest.update` (locked read-modify-write); `transcribe` runs for
-  hours while `mark`, `tmtb-import`, `links` and `fetch` write the same file.
-- Every report claim carries a speaker and a transcript timestamp; paraphrase, don't quote at length.
+- **Public repo.** Commit `published/<run>/` after `report` or `publish` writes it. Never commit `runs/`, `data/`,
+  transcripts, holdings, portfolio weights, tokens, or copied newsletter text.
+- **Push straight to `main`.** No branches or pull requests. Run `.venv/bin/pytest -q` first; commit style is in
+  [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Every claim is grounded.** A speaker and a transcript timestamp on every claim; paraphrase, never quote 12 or more
+  words. Fix the file when a check fails; never edit around a check.
+- **Never guess a link.** Set `youtube_url` only on a title-or-guest and date match; code verifies it again.
+- **Write `manifest.json` only through `podcast_alpha.manifest.update`.** `transcribe` runs for hours while other
+  commands update the same file.
 
-## Timing, triage, recall
-- Timings: `fetch` and `transcribe` record their own start/end in `manifest.json` (`timing`). Agent steps call
-  `podcast-alpha mark select|report|publish start|end --run runs/<name>`. `timing.e2e` spans first start to last end (wall); `active_seconds` sums stages, `idle_seconds` is transcribe end → select start.
-- `podcast-alpha stats` prints a trend table across runs: per-stage durations, active, idle (transcribe end → select start), wall, transcribed/total, recall.
-- Download failures retry 5xx/429/timeouts with backoff (PA_DOWNLOAD_RETRIES, PA_DOWNLOAD_BACKOFF); 4xx is final. Each failure lands in `manifest.failures` and `transcribe.failed.log`.
-- Triage: `transcribe` (and `daily`, which queues it) scores untranscribed episodes on metadata (people.yaml person
-  search/name match, tier, named guest(s) in the title ("A B & C D:" pair scores more; "CEO A B", "A B, CEO", "| A B", "A B on/:"), title keywords, recency, news and rerun penalties), stores `triage`
-  {score, reasons, rank, whisper} per episode and whispers only the top `--top` (default 8) plus every core-person
-  episode. `--top 0` whispers all; `--retriage` recomputes. Deterministic (ties broken by episode_id).
-- Recall: `tmtb-import` writes `recall` {tmtb, picks, hits, recall, hit, missed, found_in_run} into the run's
-  manifest (our selected.json picks vs TMTB's essential list).
+## Gotchas
 
+- **Wrong interpreter.** On the Linux server, the `podcast-alpha` on `PATH` is a system-Python shim with no Whisper.
+  `daily` and `status` pin the right interpreter for you; call the venv's binary yourself.
+- **YouTube blocks server IPs.** `--youtube-mirror`, `links --ytsearch`, `show-links --ytsearch` and
+  `check --captions` only work from a residential IP. After the first block, a run stops asking YouTube.
+- **A short "transcript" is a show description.** Under 5 KB, it is marked `fallback_text` and whispered.
+- **Transcribe is still running.** `status` says `wait` until the log says `finished`. Selecting earlier misses the
+  episodes still in the queue.
+- **Recall is a next-morning job.** TMTB Podcast Intel, the newsletter we benchmark our picks against, arrives about
+  2:40 PM PT, after the 9 AM report, so `tmtb-import` checks yesterday's run. Paste the email; never scrape Substack.
+- **Whisper misspells names** ("Nescape" for Netscape) and never labels speakers. Check names against the episode
+  title and description, and use a role ("host", "CEO") when the speaker is unclear.
+- **A `warning:` about a number** almost always means the cited number or the timestamp is wrong. Fix the cite.
+- **Same episode, two feeds.** Weekly `rank-merge` drops the copy with the same transcript; daily `check` allows one
+  pick per person.
+- **Scripts that call `fetch` or `daily`** need an `if __name__ == "__main__":` guard, because feed parsing uses a
+  process pool. The `podcast-alpha` command already has one.
+
+## Develop
+
+```bash
+.venv/bin/pytest -q    # about 2 seconds, no network
+```
+
+Tests never touch the network, `data/` or `published/`: `conftest.py` points the feed cache at a temp folder and turns
+off the automatic library ingest and `published/` export. Keep it that way in new tests.

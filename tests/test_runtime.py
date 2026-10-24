@@ -181,9 +181,10 @@ def test_tmtb_date_defaults_to_yesterday(tmp_path, monkeypatch):
     assert got["dir"].name == run_date("yesterday")
 
 
-def test_agents_md_uses_installed_command():
-    text = open("AGENTS.md").read()
-    assert "`pa " not in text and "podcast-alpha daily" in text
+def test_agent_docs_use_installed_command():
+    for doc in ("AGENTS.md", "prompts/daily.md", "prompts/weekly.md", "docs/reference.md"):
+        assert "`pa " not in open(doc).read(), doc
+    assert "podcast-alpha today" in open("prompts/daily.md").read()
 
 
 def test_norm_audio_strips_trackers_without_collisions():

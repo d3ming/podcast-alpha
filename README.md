@@ -1,101 +1,81 @@
 # podcast-alpha
 
-Weekly podcast alpha pipeline. Code does the deterministic work (fetch, transcripts, dedupe, validate, render).
-A Grok Bot does the judgment (claims, scores, ranking) by following [`prompts/rank.md`](prompts/rank.md).
-There are no LLM API keys or calls in this repo.
+Turns the week's investing podcasts into short, cited claims that an investor (or an investor's agent) can act on.
 
-```
-podcast-alpha fetch --days 7 --youtube-mirror   # code: write runs/<date>/ with transcripts and manifest.json
-podcast-alpha rank-prep runs/<date>             # code: condense transcripts, split into reader batches (rank/batch-N-in.json)
-# bots: one reader per batch follows prompts/rank.md, writes rank/batch-N-out.json
-podcast-alpha rank-merge runs/<date>            # code: dedupe, order, notes, validate -> ranked.json
-podcast-alpha publish runs/<date>/ranked.json --top 15   # code: grounding checks, render digest markdown, optional Notion
-```
+Every morning it pulls new episodes from about 40 shows and a watchlist of people, gets a transcript for the ones worth
+reading, and hands them to an LLM agent that picks the three that matter and writes a report. Code then checks every
+claim against the transcript (right episode, timestamp inside it, the cited number actually spoken there) before
+anything is published. Weekly, the same pipeline ranks the whole week into a top-15 digest.
 
-For the daily loop (`daily`, `transcribe`, `tmtb-import`, select, report) see [AGENTS.md](AGENTS.md).
+- **Free sources only.** RSS feeds, iTunes Search, YouTube captions and local Whisper. No paid APIs, no API keys.
+- **No LLM calls in the code.** The judgment steps are prompts in [`prompts/`](prompts) that any agent can follow.
+  Code does everything else and refuses output it cannot ground in a transcript.
+- **Built to be queried.** Every claim lands in a searchable library and in [`published/`](published) as JSON, with
+  the speaker, the timestamp and a link that jumps to that moment.
 
-## Setup
-
-```
-python3 -m venv .venv && . .venv/bin/activate
-pip install -e '.[dev,whisper]'   # pytest and faster-whisper (CPU, int8)
-pytest -q
-```
-
-## fetch
-
-`podcast-alpha fetch --days 7 [--only odd-lots,bg2] [--per-source 3] [--refetch]`
-
-- Sources come from [`sources.yaml`](sources.yaml) (shows, keynote and earnings-call feeds; tiers 1-3, tier 3 capped at 2) and
-  [`people.yaml`](people.yaml) (people watchlist, `priority: core|watch`, optional `aliases`; no holdings).
-- Each entry has `preferred_source` and `fallback` (defaults at the top of each file). Everything is free and keyless.
-  - shows: `rss` (channel podcasts, keynote feeds, earnings-call feeds). `ytdlp` only runs on the Mac (below).
-  - people: `itunes` (iTunes Search). Podcast Index needs a key and is skipped. Person episodes are tagged
-    `source_id: person:<name>`.
-- `transcripts` sets the order: `podcast_transcript` (the feed's tag, also looked up for iTunes hits), `whisper`,
-  `youtube_captions`, `youtube_audio` (yt-dlp bestaudio + whisper), `youtube_mirror`.
-- `fetch` does not run whisper by default (`--whisper-minutes 0`); episodes keep `audio_url` in the manifest.
-
-## transcribe
-
-`podcast-alpha transcribe runs/<name> [--minutes 600] [--per-episode N] [--db data/podcast_alpha.sqlite]`
-
-faster-whisper (`base.en`, CPU, int8; `PA_WHISPER_MODEL` overrides) works through episodes without a transcript, whole
-episodes by default, until the minute budget runs out. It saves the manifest after each episode, so it is resumable;
-failures are recorded as `whisper_error` and skipped next time. A `transcribe.lock` blocks a second job. Run it detached:
-
-```
-nohup .venv/bin/python -m podcast_alpha.cli transcribe runs/<name> > runs/<name>/transcribe.log 2>&1 &
+```mermaid
+flowchart LR
+    S[Sources<br/>shows, people,<br/>earnings feeds] --> F[Fetch<br/>RSS, iTunes]
+    F --> T[Transcribe<br/>feed or YouTube text,<br/>else local Whisper]
+    T --> R[(Run folder<br/>manifest + transcripts)]
+    R --> A{{Agent<br/>picks and writes}}
+    A --> C[Grounding checks]
+    C --> P[Publish<br/>Markdown, Notion]
+    C --> L[(Library and<br/>published/ claims)]
 ```
 
-- Dedupe: SQLite (`data/podcast_alpha.sqlite`) keyed by episode id (RSS guid, else YouTube id). Seen episodes
-  are skipped and listed under `skipped_seen`; `--refetch` includes them again.
-- Output in `runs/<YYYY-MM-DD>/` (git-ignored):
-  - one `.md` per episode: YAML front matter (`episode_id`, `title`, `source`, `source_id`, `tier`, `published`,
-    `url`, `youtube_id`, `transcript_source`), the description, then the transcript as `[h:mm:ss] Speaker: text`.
-  - `manifest.json`: every episode, including those without a transcript (`has_transcript: false`).
+## Quickstart
 
-## YouTube fallback on the Mac (manual)
+Requires Python 3.10+ and `ffmpeg`.
 
-For video-only content, from `~/projects/podcast-alpha` on a residential connection:
-
-```
-cd ~/projects/podcast-alpha && git pull -q --ff-only && python3 -m venv .venv && .venv/bin/pip install -q yt-dlp youtube-transcript-api pyyaml faster-whisper 'av<16' && rm -rf /tmp/pa-yt && .venv/bin/python -m podcast_alpha.cli fetch --youtube-only --days 7 --out /tmp/pa-yt/out && tar czf /tmp/pa-yt.tgz -C /tmp/pa-yt out && echo /tmp/pa-yt.tgz
+```bash
+git clone https://github.com/d3ming/podcast-alpha && cd podcast-alpha
+python3 -m venv .venv
+.venv/bin/pip install -e '.[dev,whisper]'        # on Apple silicon: '.[dev,whisper,mac]'
+.venv/bin/podcast-alpha doctor                    # checks Python, Whisper, ffmpeg, network
+.venv/bin/pytest -q
 ```
 
-YouTube channels and person search run through yt-dlp at a slow pace (`--sleep-requests`, `--sleep-interval`,
-`--limit-rate`). Captions are used when available; otherwise bestaudio is downloaded and transcribed with whisper
-(skipped if faster-whisper is not installed; `--whisper-minutes` defaults to 600). The output dir is self-contained.
-On the box: `podcast-alpha merge <dir> --into runs/<name>` dedupes it against the DB and the run.
+Start today's run. This fetches the last 48 hours and transcribes in the background:
 
-## rank (bot)
+```bash
+.venv/bin/podcast-alpha today
+.venv/bin/podcast-alpha status runs/$(date +%F)   # where the run stands and the exact next step
+```
 
-The bot follows [`prompts/rank.md`](prompts/rank.md): claim fields, 1-10 scores with anchors and a forced spread,
-tier rules (tier 3 at most 2 episodes and never in ranks 1-3), a one-line reason and up to 5 top claims per episode.
-Output format: [`schema/ranked.schema.json`](schema/ranked.schema.json).
+From there an agent follows [`prompts/daily.md`](prompts/daily.md): it loops on `status`, writes `selected.json` and
+`report.json` when asked, and code validates, renders and publishes them.
 
-## publish
+## What you get
 
-`podcast-alpha publish runs/<date>/ranked.json [--top N] [--out file.md] [--notion-parent <page id>]`
+| Output | Where | What it is |
+|---|---|---|
+| Daily report | `runs/<date>/report.md`, Notion | Key insights, then three essential episodes with cited claims |
+| Weekly digest | `runs/<week>/digest-*.md`, Notion | Top 15 episodes of the week, scored, with claims and links |
+| Claims feed | [`published/<run>/claims.jsonl`](published) | Every claim: speaker, timestamp, tickers, deep link. Committed to git |
+| Library | `data/library.sqlite` | Claims plus full-text transcript search: `podcast-alpha library query --ticker NVDA` |
 
-- Validates against the schema and the tier rules, and rejects anything that looks like holdings data.
-  A clustered score spread prints a warning.
-- Grounds claims in the run folder next to the ranked file (ids in the manifest, timestamps inside the transcript, no
-  12-word verbatim runs); errors stop the publish, number-vs-timestamp mismatches print warnings. `--top N` limits the digest
-  to the first N ranked episodes.
-- Writes `digest-<week_of>.md` next to the ranked file.
-- If `NOTION_TOKEN` and a parent page id (`--notion-parent` or `NOTION_PARENT_PAGE_ID`) are set, it also creates the
-  Notion page through the API. Otherwise Cain publishes the markdown with the Notion connector.
+An investor agent should start with [docs/agent-guide.md](docs/agent-guide.md).
 
-## Show links
+## Configure
 
-`show_links.yaml` keeps one row per podcast (`site`, `youtube`, `apple`, `spotify`). `podcast-alpha show-links [--only id,id] [--ytsearch]`
-fills blank fields from the iTunes lookup, the feed's own link and the show's site (Spotify and YouTube are checked against the
-page title; hosting-platform pages are never scraped for YouTube). Edit any value to fix it: set values are never overwritten.
+| File | Controls |
+|---|---|
+| [`sources.yaml`](sources.yaml) | Shows and feeds, each with a tier (1 is highest) and a preferred transcript source |
+| [`people.yaml`](people.yaml) | People to search for across all podcasts (`core` people are always transcribed) |
+| [`show_links.yaml`](show_links.yaml) | Each show's site, YouTube, Apple and Spotify links. Hand edits are never overwritten |
+| [`publish.yaml`](publish.yaml) | Notion parent page for automatic publishing (with `NOTION_TOKEN`) |
 
-## Holdings
+## Documentation
 
-`podcast_alpha/holdings.py` can fetch the folio JSON at run time so a bot can weigh relevance privately. The endpoint comes from the `PA_FOLIO_URL` environment variable (no default; unset means no weighting).
-Holdings and weights never go into the repo, `ranked.json`, the digest or Notion; publish rejects them.
+- [Architecture](docs/architecture.md): how it works, where data lives, and why it is built this way.
+- [Command reference](docs/reference.md): every command, flag and environment variable.
+- [Agent guide](docs/agent-guide.md): querying the library and `published/` claims.
+- [AGENTS.md](AGENTS.md): the operating manual for the agent that runs the pipeline.
+- [Contributing](CONTRIBUTING.md): development setup, tests and commit style.
 
-Out of scope for v0.1: claim verification against filings, speaker diarization, scheduling.
+## Limits
+
+Claims are checked against transcripts, not against filings or prices. Whisper does not label speakers, so speaker
+names come from the agent. Video-only shows and YouTube captions need a residential IP address, because YouTube blocks
+most data-center addresses.
